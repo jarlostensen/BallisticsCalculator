@@ -79,9 +79,5 @@ namespace Ballistics
 		}
 	};
 
-	float SpeedToMach(float SpeedMs, float TemperatureK);
-
-	float GetNearestDragCoefficient(float SpeedMs, float TemperatureK);
-
 	void SolveTrajectoryG7(std::vector<TrajectoryDataPoint>& OutTrajectoryDataPoints, const FiringData & InFiringData, const EnvironmentData & Environment, const SolverParams & Solver);
 }
