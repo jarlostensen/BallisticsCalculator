@@ -64,20 +64,27 @@ namespace Ballistics
         HybridEulerRk4Solver(const FiringData& InFiringData, const EnvironmentData& InEnvironment, const SolverParams& SolverParams)
             : SolverBase(InFiringData, InEnvironment, SolverParams)
         {
-            VxSolver.Initialize(Q.VelocityX, SolverParams.TimeStep, [this](float Vx, float /* t */) -> float
+            LastQ.first = InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle);
+            LastQ.second = InFiringData.Bullet.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle);
+            
+            VelocitySolver.Initialize(InFiringData.Bullet.MuzzleVelocityMs, SolverParams.TimeStep, [this](float V, float /* t */) -> float
                 {
-                    return -DragFactor * GetDragCoefficient(G7,Vx, this->Environment.TKelvin) * (Vx * Vx);
+                    return -DragFactor * GetDragCoefficient(G7,V, this->Environment.TKelvin) * (V * V);
                 });
         }
 
         virtual void Advance() override
         {
-            Q.VelocityX = VxSolver.Advance();
+            const float FlightVelocity = VelocitySolver.Advance();
+            const float AngleOfAttack = std::atan2f(LastQ.second, LastQ.first);
+            
+            Q.VelocityX = FlightVelocity * std::cosf(AngleOfAttack);
             Q.DistanceX += Q.VelocityX * Params.TimeStep;
-
-            // Vy
-            Q.VelocityY += Environment.Gravity * Params.TimeStep;
+            Q.VelocityY = FlightVelocity*std::sinf(AngleOfAttack) + Environment.Gravity * Params.TimeStep;
             Q.DistanceY += Q.VelocityY * Params.TimeStep;
+
+            LastQ.first = Q.VelocityX;
+            LastQ.second = Q.VelocityY;
 
             Q.T += Params.TimeStep;
         }
@@ -85,10 +92,13 @@ namespace Ballistics
         void Reset(const FiringData& InFiringData) override
         {
             SolverBase::Reset(InFiringData);
-            VxSolver.Reset();
+            VelocitySolver.Reset();
+            LastQ.first = InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle);
+            LastQ.second = InFiringData.Bullet.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle);
         }
 
-        Solver::RungeKutta4 VxSolver;
+        Solver::RungeKutta4 VelocitySolver;
+        std::pair<float, float> LastQ;
     };
     
 	void SolveTrajectoryG7(std::vector<TrajectoryDataPoint>& OutElevation, const FiringData& InFiringData, const EnvironmentData& Environment, const SolverParams& InSolverParams)
@@ -115,11 +125,11 @@ namespace Ballistics
 
         const float PrevHeight = Height;
         Height = 0.0f;
-
-        HybridEulerRk4Solver Solver(*this, Environment, SolverParams);
-
         float MinAngle = 0.0f;
         float MaxAngle = static_cast<float>(std::numbers::pi) / 2.0f;
+	    ZeroAngle = MinAngle + (MaxAngle - MinAngle) / 2.0f;
+	    
+	    HybridEulerRk4Solver Solver(*this, Environment, SolverParams);
 
         // track the last DistanceY values for interpolation
         constexpr int CurveTaiLength = 4;
