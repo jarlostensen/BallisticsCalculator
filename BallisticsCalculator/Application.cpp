@@ -134,6 +134,44 @@ namespace Ui
 using namespace Ui;
 namespace
 {
+    void RenderFilledCircle(float centerX, float centerY, float radius)
+    {
+        // Using the midpoint circle algorithm
+        const float diameter = radius * 2;
+        float x = radius - 1;
+        float y = 0;
+        float dx = 1;
+        float dy = 1;
+        float error = dx - diameter;
+
+        while (x >= y) {
+            // Draw horizontal lines for each octant to fill the circle
+            SDL_RenderLine(SdlRenderer, 
+                centerX - x, centerY + y, 
+                centerX + x, centerY + y);
+            SDL_RenderLine(SdlRenderer, 
+                centerX - x, centerY - y, 
+                centerX + x, centerY - y);
+            SDL_RenderLine(SdlRenderer, 
+                centerX - y, centerY + x, 
+                centerX + y, centerY + x);
+            SDL_RenderLine(SdlRenderer, 
+                centerX - y, centerY - x, 
+                centerX + y, centerY - x);
+
+            if (error <= 0) {
+                y++;
+                error += dy;
+                dy += 2;
+            }
+            if (error > 0) {
+                x--;
+                dx += 2;
+                error += dx - diameter;
+            }
+        }
+    }
+
     void RenderCurves()
     {
         for (auto& Curve : CurveBuffer)
@@ -147,6 +185,9 @@ namespace
             Point2D& PrevPoint = TransformedPoints[0];
             for (size_t n = 1; n < TransformedPoints.size(); ++n)
             {
+                SDL_FPoint Center = {TransformedPoints[n].x, TransformedPoints[n].y};
+                RenderFilledCircle(TransformedPoints[n].x, TransformedPoints[n].y, 2.0f);
+
                 SDL_RenderLine(SdlRenderer,
                                PrevPoint.x,
                                PrevPoint.y,
@@ -163,13 +204,8 @@ namespace
         {
             return;
         }
-        // PointType2d ScaleTransform;
-        // PointType2d NormalizationTransform;
-        // GenerateTransforms(MaximalDataRange, ScaleTransform, NormalizationTransform);
         for (auto& Line : LineBuffer)
         {
-            // LineType2d TransformedLine;
-            // ViewportTransform(ScaleTransform, NormalizationTransform, Line, TransformedLine);
             SDL_RenderLine(SdlRenderer,
                            Line.first.x,
                            Line.first.y,

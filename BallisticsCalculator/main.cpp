@@ -95,8 +95,7 @@ namespace
     
         FiringData.Bullet = BulletData;
         FiringData.Height = 10.0f;
-        FiringData.ZeroDistance = 100.0f;
-        FiringData.ZeroDistance = 100.0f;
+        FiringData.ZeroDistance = 200.0f;
         FiringData.ZeroIn(0.01f, Environment);
 
         Ballistics::SolverParams Solver;

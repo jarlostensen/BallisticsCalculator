@@ -144,45 +144,46 @@ namespace Ballistics
             };
         
         float SolutionDelta = std::numeric_limits<float>::max();
+	    float PrevImpactHeight = 0.0f;
         // terminate if we hit the limit of being able to differentiate distances
         // if two solutions are within 1mm of each other we are not going to make meaningful progress
-        while(SolutionDelta >= 0.001f)
+        while(SolutionDelta > 0.001f)
         {
             ZeroAngle = MinAngle + (MaxAngle - MinAngle) / 2.0f;
             Solver.Reset(*this);
             
-            float PrevDistanceX = 0.0f;
-            const auto store_last_q = [&]()
-                {
-                    CurveTail[CurveTailStartIndex] = Solver.Q.DistanceY;
-                    curve_tail_index(+1);
-                };
+            //float PrevDistanceX = 0.0f;
+            // const auto store_last_q = [&]()
+            //     {
+            //         CurveTail[CurveTailStartIndex] = Solver.Q.DistanceY;
+            //         curve_tail_index(+1);
+            //     };
 
             while (!Solver.Completed() && Solver.Q.DistanceX < ZeroDistance)
             {
-                store_last_q();
-                PrevDistanceX = Solver.Q.DistanceX;
+                // store_last_q();
+                // PrevDistanceX = Solver.Q.DistanceX;
                 Solver.Advance();
             }
 
+            float ImpactHeight = 0.0f;
             if (Solver.Q.DistanceX >= ZeroDistance)
             {
-                float ImpactHeight;
-                if (Solver.Q.DistanceX > ZeroDistance)
-                {
-                    // interpolate height for better accuracy, add one more point to get the full set of 4
-                    store_last_q();
-                    Curves::CatmullRomSegment CatmullRomSegment(
-                        CurveTail[curve_tail_index(0)],
-                        CurveTail[curve_tail_index(1)],
-                        CurveTail[curve_tail_index(2)],
-                        CurveTail[curve_tail_index(3)]
-                    );
-                    // estimate curve parameter by fraction of X distance
-                    const float t = (ZeroDistance - PrevDistanceX) / (Solver.Q.DistanceX - PrevDistanceX);
-                    ImpactHeight = CatmullRomSegment(t);
-                }
-                else
+                // if (Solver.Q.DistanceX > ZeroDistance)
+                // {
+                //     // interpolate height for better accuracy, add one more point to get the full set of 4
+                //     store_last_q();
+                //     Curves::CatmullRomSegment CatmullRomSegment(
+                //         CurveTail[curve_tail_index(0)],
+                //         CurveTail[curve_tail_index(1)],
+                //         CurveTail[curve_tail_index(2)],
+                //         CurveTail[curve_tail_index(3)]
+                //     );
+                //     // estimate curve parameter by fraction of X distance
+                //     const float t = (ZeroDistance - PrevDistanceX) / (Solver.Q.DistanceX - PrevDistanceX);
+                //     ImpactHeight = CatmullRomSegment(t);
+                // }
+                // else
                 {
                     ImpactHeight = Solver.Q.DistanceY;
                 }
@@ -203,8 +204,9 @@ namespace Ballistics
                 // adjust down
                 MaxAngle = ZeroAngle;
             }
-            
-            SolutionDelta = fabsf(Solver.Q.DistanceY - CurveTail[curve_tail_index(-1)]);
+
+            SolutionDelta = fabsf(ImpactHeight - PrevImpactHeight);
+            PrevImpactHeight = ImpactHeight;
         }
     }
 }
