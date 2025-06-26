@@ -50,8 +50,9 @@ namespace Ballistics
 
 	struct SolverParams
 	{
-		float TimeStep;
-		float MaxTime;
+		float TimeStep = 0.0f;
+		float MaxTime = 0.0f;
+		float MaxX = 0.0f;
 	};
 
 	struct TrajectoryDataPoint

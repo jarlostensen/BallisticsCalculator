@@ -105,7 +105,7 @@ namespace Ballistics
 	{
         HybridEulerRk4Solver Solver(InFiringData, Environment, InSolverParams);
 
-        while (!Solver.Completed())
+        while (!Solver.Completed() && (InSolverParams.MaxX==0.0f || Solver.Q.DistanceX<InSolverParams.MaxX))
         {            
             Solver.Advance();
             OutElevation.emplace_back(Solver.Q);
