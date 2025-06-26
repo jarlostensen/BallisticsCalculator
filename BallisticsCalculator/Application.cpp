@@ -101,28 +101,12 @@ namespace Ui
         });
     }
 
-    void DrawGrid()
+    Range2D GetMaximalDataRange()
     {
-        if (MaximalDataRange.IsNonEmpty())
-        {
-            ClearLines();
-
-            const float DataRangeMidY = MaximalDataRange.Min.y + MaximalDataRange.Height()/2;
-            PlotLine(MaximalDataRange.Min.x, DataRangeMidY, MaximalDataRange.Max.x, DataRangeMidY);
-            
-            // try to fit one tick per 25 meters
-            constexpr float TickSpacing = 25.0f;
-            const int NumTicks = static_cast<int>(MaximalDataRange.Width() / TickSpacing);
-            float X = MaximalDataRange.Min.x;
-            for (int nTick = 0; nTick < NumTicks; nTick++)
-            {
-                constexpr float TickHalfHeight = 0.01f; //< one centimeter high
-                const float ThisTickHalfHeight = (nTick & 1) ? TickHalfHeight : TickHalfHeight/2.0f; 
-                PlotLine(X, DataRangeMidY - ThisTickHalfHeight, X, DataRangeMidY + ThisTickHalfHeight);
-                X += TickSpacing;
-            }
-        }
+        return MaximalDataRange;   
     }
+
+   
 }
 
 using namespace Ui;
@@ -181,6 +165,10 @@ namespace
 
     void RenderText()
     {
+        if ( SdlFont == nullptr )
+        {
+            return;
+        }
         for (auto& Text : TextBuffer)
         {
             SDL_Color TextColor = {0, 0, 0, 255};
@@ -213,7 +201,7 @@ namespace
         SDL_SetRenderDrawColor(SdlRenderer, 255, 255, 255, 255);
         SDL_RenderClear(SdlRenderer);
 
-        if ( (SdlFont = TTF_OpenFont("C:\\Windows\\Fonts\\Arial.ttf", 12))==nullptr )
+        if ( (SdlFont = TTF_OpenFont(R"(C:\Windows\Fonts\Arial.ttf)", 12))==nullptr )
         {
             SDL_Log("Failed to load font: SDL_Ttf error: %s\n", SDL_GetError());
         }
@@ -260,7 +248,6 @@ SDL_AppResult SDL_AppIterate(void* /*appstate*/)
     SDL_SetRenderDrawColor(SdlRenderer, 128, 128, 128, 255);
     RenderLines();
 
-    DrawGrid();
     RenderText();
     
     SDL_RenderPresent(SdlRenderer);

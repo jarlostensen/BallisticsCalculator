@@ -115,6 +115,8 @@ namespace Ui
     void PlotCurve(const Curve2D& Curve);
     void ClearCurves();
     void PlotText(const std::string& Text, const PointType2d& Position);
+
+    Range2D GetMaximalDataRange();
     
 }
 

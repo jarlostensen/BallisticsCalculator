@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <format>
 #include <iostream>
 #include <iomanip>
 
@@ -42,6 +43,30 @@ namespace
 #endif
     }
 
+    void DrawGrid()
+    {
+        const Range2D MaximalDataRange = GetMaximalDataRange();
+        if (MaximalDataRange.IsNonEmpty())
+        {
+            ClearLines();
+
+            const float DataRangeMidY = MaximalDataRange.Min.y + MaximalDataRange.Height()/2;
+            PlotLine(MaximalDataRange.Min.x, DataRangeMidY, MaximalDataRange.Max.x, DataRangeMidY);
+            
+            // try to fit one tick per 25 meters
+            constexpr float TickSpacing = 25.0f;
+            const int NumTicks = static_cast<int>(MaximalDataRange.Width() / TickSpacing);
+            float X = MaximalDataRange.Min.x;
+            for (int nTick = 0; nTick < NumTicks; nTick++)
+            {
+                constexpr float TickHalfHeight = 0.01f; //< one centimeter high
+                const float ThisTickHalfHeight = (nTick & 1) ? TickHalfHeight : TickHalfHeight/2.0f; 
+                PlotLine(X, DataRangeMidY - ThisTickHalfHeight, X, DataRangeMidY + ThisTickHalfHeight);
+                X += TickSpacing;
+            }
+        }
+    }
+
     void Solve()
     {
         BulletData.MassGr = 155.0f;
@@ -73,9 +98,7 @@ namespace
             MinX = std::min(Q.DistanceX, MinX);
             MinY = std::min(Q.DistanceY, MinY);
         }
-        DrawTrajectory(false);
-
-        PlotText("Ballistics calculator", {10.f, 25.f});
+        
     }
 }
 
@@ -83,10 +106,14 @@ namespace
 void AppInit()
 {
     Solve();
+    DrawTrajectory(true);
+    DrawGrid();
+    PlotText(std::format("Muzzle velocity is {:.1f}m/s", BulletData.MuzzleVelocityMs), {10.f, 25.f});
+    PlotText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
 }
 void AppUpdate()
 {
-    DrawTrajectory(true);
+    DrawGrid();
 }
 #else
 int main(int /*argc*/, char** /*argv*/)
