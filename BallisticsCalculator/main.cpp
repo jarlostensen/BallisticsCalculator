@@ -30,7 +30,7 @@ namespace
         Curve2D Curve;
         for (size_t nQ = 1; nQ < TrajectoryDataPoints.size(); ++nQ)
         {
-            Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY);    
+            Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY);
         }
         PlotCurve(Curve);
 #else
@@ -45,24 +45,38 @@ namespace
 
     void DrawGrid()
     {
-        const Range2D MaximalDataRange = GetMaximalDataRange();
+        const Range2D MaximalDataRange = GetPlotRange();
         if (MaximalDataRange.IsNonEmpty())
         {
             ClearLines();
+            ClearText();
+            
+            PointType2d ScaleTransform;
+            PointType2d NormalizationTransform;
+            GenerateTransforms(ScaleTransform, NormalizationTransform);
 
-            const float DataRangeMidY = MaximalDataRange.Min.y + MaximalDataRange.Height()/2;
-            PlotLine(MaximalDataRange.Min.x, DataRangeMidY, MaximalDataRange.Max.x, DataRangeMidY);
+            const PointType2d DataRangeMin = MaximalDataRange.Min;
+            const PointType2d DataRangeMax = MaximalDataRange.Max;
+            constexpr PointType2d TickVector = {25.0f, 0.01f}; // every 25 meters, 1 cm high
+            PointType2d ViewportMax;
+            PointType2d ViewportMin;
+            PointType2d ViewportTickVector;
+            DataPointToViewport(ScaleTransform, NormalizationTransform, DataRangeMin, ViewportMin);
+            DataPointToViewport(ScaleTransform, NormalizationTransform, DataRangeMax, ViewportMax);
+            DataVectorToViewport(ScaleTransform, NormalizationTransform, TickVector, ViewportTickVector);
+            
+            const float ViewportMidY = (ViewportMax.y + ViewportMin.y)/2.0f; 
+            DrawLine(ViewportMin.x, ViewportMidY, ViewportMax.x, ViewportMidY);
             
             // try to fit one tick per 25 meters
-            constexpr float TickSpacing = 25.0f;
-            const int NumTicks = static_cast<int>(MaximalDataRange.Width() / TickSpacing);
-            float X = MaximalDataRange.Min.x;
+            const int NumTicks = static_cast<int>((ViewportMax.x - ViewportMin.x) / ViewportTickVector.x);
+            float X = ViewportMin.x;
             for (int nTick = 0; nTick < NumTicks; nTick++)
             {
-                constexpr float TickHalfHeight = 0.01f; //< one centimeter high
-                const float ThisTickHalfHeight = (nTick & 1) ? TickHalfHeight : TickHalfHeight/2.0f; 
-                PlotLine(X, DataRangeMidY - ThisTickHalfHeight, X, DataRangeMidY + ThisTickHalfHeight);
-                X += TickSpacing;
+                const float ThisTickHalfHeight = (nTick & 1) ? ViewportTickVector.x : ViewportTickVector.x/2.0f; 
+                DrawLine(X, ViewportMidY - ThisTickHalfHeight, X, ViewportMidY + ThisTickHalfHeight);
+                DrawText(std::format("{:}", nTick*25), {X, ViewportMidY + ThisTickHalfHeight});
+                X += ViewportTickVector.x;
             }
         }
     }
@@ -82,12 +96,13 @@ namespace
         FiringData.Bullet = BulletData;
         FiringData.Height = 10.0f;
         FiringData.ZeroDistance = 100.0f;
+        FiringData.ZeroDistance = 100.0f;
         FiringData.ZeroIn(0.01f, Environment);
 
         Ballistics::SolverParams Solver;
         Solver.MaxTime = 10.0f;
         Solver.TimeStep = 0.01f;
-        Solver.MaxX = 200.0f;
+        Solver.MaxX = 300.0f;
         
         Ballistics::SolveTrajectoryG7(TrajectoryDataPoints, FiringData, Environment, Solver);
 
@@ -108,8 +123,8 @@ void AppInit()
     Solve();
     DrawTrajectory(true);
     DrawGrid();
-    PlotText(std::format("Muzzle velocity is {:.1f}m/s", BulletData.MuzzleVelocityMs), {10.f, 25.f});
-    PlotText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
+    DrawText(std::format("Muzzle velocity is {:.1f}m/s", BulletData.MuzzleVelocityMs), {10.f, 25.f});
+    DrawText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
 }
 void AppUpdate()
 {

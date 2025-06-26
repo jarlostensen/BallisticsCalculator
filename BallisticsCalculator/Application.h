@@ -105,18 +105,20 @@ namespace Ui
     using PointType2d = Point2D;
     using LineType2d = std::pair<PointType2d, PointType2d>;
     
-    void UpdateViewportExtents();
-    void GenerateTransforms(const Range2D& CurveDataExtents, PointType2d& OutScaleTransform, PointType2d& OutNormalizationTransform);
-    void ViewportTransform(const PointType2d& ScaleTransform, const PointType2d& NormalizationTransform,
-        const std::vector<PointType2d>& Points, std::vector<PointType2d>& OutPoints);
+    void GenerateTransforms(PointType2d& OutScaleTransform, PointType2d& OutNormalizationTransform);
+    void DataVectorToViewport(const PointType2d& ScaleTransform, const PointType2d& NormalizationTransform, const PointType2d& Vector, PointType2d& OutVector);
+    void DataPointToViewport(const PointType2d& ScaleTransform, const PointType2d& NormalizationTransform, const PointType2d& Point, PointType2d& OutPoint);
+    
+    void DrawLine(float x0, float y0, float x1, float y1);
+    void DrawText(const std::string& Text, const PointType2d& Position);
 
-    void PlotLine(float x0, float y0, float x1, float y1);
     void ClearLines();
+    void ClearText();
+    
     void PlotCurve(const Curve2D& Curve);
     void ClearCurves();
-    void PlotText(const std::string& Text, const PointType2d& Position);
-
-    Range2D GetMaximalDataRange();
+    
+    Range2D GetPlotRange();
     
 }
 

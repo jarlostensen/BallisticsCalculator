@@ -69,7 +69,24 @@ namespace Ui
         OutLine.second = {Line.second.x * ScaleTransform.x + NormalizationTransform.x, ViewportExtents.Max.y - (Line.second.y * ScaleTransform.y + NormalizationTransform.y)};    
     }
 
-    void PlotLine(float x0, float y0, float x1, float y1)
+    void DataPointToViewport(const PointType2d& ScaleTransform, const PointType2d& NormalizationTransform,
+        const PointType2d& Point, PointType2d& OutPoint)
+    {
+        OutPoint.x = Point.x * ScaleTransform.x + NormalizationTransform.x;
+        OutPoint.y = ViewportExtents.Max.y -  (Point.y * ScaleTransform.y + NormalizationTransform.y);
+    }
+
+    void GenerateTransforms(PointType2d& OutScaleTransform, PointType2d& OutNormalizationTransform)
+    {
+        GenerateTransforms(MaximalDataRange, OutScaleTransform, OutNormalizationTransform);
+    }
+
+    void DataVectorToViewport(const PointType2d& ScaleTransform, const PointType2d& NormalizationTransform, const PointType2d& Vector, PointType2d& OutVector)
+    {
+        DataPointToViewport(ScaleTransform, NormalizationTransform, {Vector.x + MaximalDataRange.Min.x, Vector.y + MaximalDataRange.Min.y}, OutVector);
+    }
+
+    void DrawLine(float x0, float y0, float x1, float y1)
     {
         LineBuffer.push_back({
             {x0,y0}, {x1,y1}
@@ -79,6 +96,11 @@ namespace Ui
     void ClearLines()
     {
         LineBuffer.clear();   
+    }
+
+    void ClearText()
+    {
+        TextBuffer.clear();  
     }
 
     void PlotCurve(const Curve2D& Curve)
@@ -93,7 +115,7 @@ namespace Ui
         MaximalDataRange = EmptyRange2D;
     }
 
-    void PlotText(const std::string& Text, const PointType2d& Position)
+    void DrawText(const std::string& Text, const PointType2d& Position)
     {
         TextBuffer.push_back({
             Text,
@@ -101,7 +123,7 @@ namespace Ui
         });
     }
 
-    Range2D GetMaximalDataRange()
+    Range2D GetPlotRange()
     {
         return MaximalDataRange;   
     }
@@ -141,18 +163,18 @@ namespace
         {
             return;
         }
-        PointType2d ScaleTransform;
-        PointType2d NormalizationTransform;
-        GenerateTransforms(MaximalDataRange, ScaleTransform, NormalizationTransform);
+        // PointType2d ScaleTransform;
+        // PointType2d NormalizationTransform;
+        // GenerateTransforms(MaximalDataRange, ScaleTransform, NormalizationTransform);
         for (auto& Line : LineBuffer)
         {
-            LineType2d TransformedLine;
-            ViewportTransform(ScaleTransform, NormalizationTransform, Line, TransformedLine);
+            // LineType2d TransformedLine;
+            // ViewportTransform(ScaleTransform, NormalizationTransform, Line, TransformedLine);
             SDL_RenderLine(SdlRenderer,
-                           TransformedLine.first.x,
-                           TransformedLine.first.y,
-                           TransformedLine.second.x,
-                           TransformedLine.second.y);
+                           Line.first.x,
+                           Line.first.y,
+                           Line.second.x,
+                           Line.second.y);
         }
     }
 
