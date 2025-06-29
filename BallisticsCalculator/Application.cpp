@@ -145,7 +145,7 @@ namespace
         float error = dx - diameter;
 
         while (x >= y) {
-            // Draw horizontal lines for each octant to fill the circle
+            // Draw horizontal lines for each quadrant to fill the circle
             SDL_RenderLine(SdlRenderer, 
                 centerX - x, centerY + y, 
                 centerX + x, centerY + y);
@@ -185,9 +185,7 @@ namespace
             Point2D& PrevPoint = TransformedPoints[0];
             for (size_t n = 1; n < TransformedPoints.size(); ++n)
             {
-                SDL_FPoint Center = {TransformedPoints[n].x, TransformedPoints[n].y};
                 RenderFilledCircle(TransformedPoints[n].x, TransformedPoints[n].y, 2.0f);
-
                 SDL_RenderLine(SdlRenderer,
                                PrevPoint.x,
                                PrevPoint.y,

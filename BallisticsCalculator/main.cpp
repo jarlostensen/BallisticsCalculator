@@ -5,7 +5,7 @@
 
 #include "Application.h"
 
-#include "BallisticsCalculator.h"
+#include "Ballistics.h"
 #include "Curves.h"
 
 using namespace Ui;
@@ -33,6 +33,10 @@ namespace
             Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY);
         }
         PlotCurve(Curve);
+
+        PointType2d ScaleTransform;
+        PointType2d NormalizationTransform;
+        GenerateTransforms(ScaleTransform, NormalizationTransform);
 #else
         std::cout << "T\tX\tY\tVx\n";
         for (const Ballistics::TrajectoryDataPoint& Q : TrajectoryDataPoints)
@@ -57,27 +61,33 @@ namespace
 
             const PointType2d DataRangeMin = MaximalDataRange.Min;
             const PointType2d DataRangeMax = MaximalDataRange.Max;
-            constexpr PointType2d TickVector = {25.0f, 0.01f}; // every 25 meters, 1 cm high
             PointType2d ViewportMax;
             PointType2d ViewportMin;
-            PointType2d ViewportTickVector;
             DataPointToViewport(ScaleTransform, NormalizationTransform, DataRangeMin, ViewportMin);
             DataPointToViewport(ScaleTransform, NormalizationTransform, DataRangeMax, ViewportMax);
-            DataVectorToViewport(ScaleTransform, NormalizationTransform, TickVector, ViewportTickVector);
             
             const float ViewportMidY = (ViewportMax.y + ViewportMin.y)/2.0f; 
             DrawLine(ViewportMin.x, ViewportMidY, ViewportMax.x, ViewportMidY);
             
             // try to fit one tick per 25 meters
-            const int NumTicks = static_cast<int>((ViewportMax.x - ViewportMin.x) / ViewportTickVector.x);
-            float X = ViewportMin.x;
+            PointType2d TickVector = { 25.0f, FiringData.Height+0.01f }; // every 25 meters, 1 cm high
+            const int NumTicks = static_cast<int>((DataRangeMax.x - DataRangeMin.x) / TickVector.x);
             for (int nTick = 0; nTick < NumTicks; nTick++)
             {
-                const float ThisTickHalfHeight = (nTick & 1) ? ViewportTickVector.x : ViewportTickVector.x/2.0f; 
-                DrawLine(X, ViewportMidY - ThisTickHalfHeight, X, ViewportMidY + ThisTickHalfHeight);
-                DrawText(std::format("{:}", nTick*25), {X, ViewportMidY + ThisTickHalfHeight});
-                X += ViewportTickVector.x;
+                PointType2d ViewportTickVector;
+                DataPointToViewport(ScaleTransform, NormalizationTransform, TickVector, ViewportTickVector);
+                const float ThisTickHalfHeight = (nTick & 1) ? 6 : 3; 
+                
+                DrawLine(ViewportTickVector.x, ViewportMidY - ThisTickHalfHeight, ViewportTickVector.x, ViewportMidY + ThisTickHalfHeight);
+                DrawText(std::format("{:}", (nTick+1)*25), { ViewportTickVector.x, ViewportMidY + ThisTickHalfHeight});
+                TickVector.x += 25.0f;
             }
+
+            const PointType2d ZeroPoint = { FiringData.ZeroDistance, FiringData.Height };
+            PointType2d ViewportZeroPoint;
+            DataPointToViewport(ScaleTransform, NormalizationTransform, ZeroPoint, ViewportZeroPoint);
+            DrawText("[Zero]", ViewportZeroPoint);
+            DrawLine(ViewportZeroPoint.x+2, ViewportMin.y, ViewportZeroPoint.x, ViewportMax.y);
         }
     }
 
@@ -96,7 +106,10 @@ namespace
         FiringData.Bullet = BulletData;
         FiringData.Height = 10.0f;
         FiringData.ZeroDistance = 200.0f;
-        FiringData.ZeroIn(0.01f, Environment);
+        // roughly one inch at 100m etc
+        const float ToleranceM = (2.0f * (FiringData.ZeroDistance * 0.01f)) / 100.0f;
+
+        FiringData.ZeroIn(ToleranceM, Environment);
 
         Ballistics::SolverParams Solver;
         Solver.MaxTime = 10.0f;
