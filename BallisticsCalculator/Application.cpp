@@ -15,23 +15,25 @@ namespace
 
 namespace Ui
 {
-    struct Text
-    {
-        std::string String;
-        PointType2d Position;
-    };
-
-    using LineBufferType = std::vector<LineType2d>;
+    using LineBufferType = std::vector<Line2D>;
     using CurveBufferType = std::vector<Curve2D>;
-    using TextBufferType = std::vector<Text>;
+    using TextBufferType = std::vector<Label2D>;
+    using PlotBufferType = std::vector<Plot>;
     LineBufferType LineBuffer;
     CurveBufferType CurveBuffer;
     TextBufferType TextBuffer;
+    PlotBufferType PlotBuffer;
+
+    struct ViewportTransform
+    {
+        Point2D Scale;
+        Point2D Translation;
+    };
 
     constexpr Range2D ViewportMargins{{2.0f,2.0f}, {2.0f,2.0f}};
     Range2D ViewportExtents = {Point2D(0.0f,0.0f) + ViewportMargins.Min, Point2D(800.0f,600.0f) - ViewportMargins.Max};
     Range2D MaximalDataRange = EmptyRange2D;
-    
+
     void UpdateViewportExtents()
     {
         int ViewPortWidth;
@@ -43,64 +45,41 @@ namespace Ui
         ViewportExtents.Max.y = static_cast<float>(ViewPortHeight);
     }
 
-    void GenerateTransforms(const Range2D& CurveDataExtents, PointType2d& OutScaleTransform, PointType2d& OutNormalizationTransform)
+    void GenerateTransform(const Range2D& Extents, ViewportTransform& OutViewportTransform)
     {
-        OutScaleTransform.x = (ViewportExtents.Max.x - ViewportExtents.Min.x) / (CurveDataExtents.Max.x - CurveDataExtents.Min.x);
-        OutScaleTransform.y = (ViewportExtents.Max.y - ViewportExtents.Min.y) / (CurveDataExtents.Max.y - CurveDataExtents.Min.y);
-        OutNormalizationTransform.x = (CurveDataExtents.Max.x * ViewportExtents.Min.x - CurveDataExtents.Min.x * ViewportExtents.Max.x) / (CurveDataExtents.Max.x - CurveDataExtents.Min.x);
-        OutNormalizationTransform.y = (CurveDataExtents.Max.y * ViewportExtents.Min.y - CurveDataExtents.Min.y * ViewportExtents.Max.y) / (CurveDataExtents.Max.y - CurveDataExtents.Min.y);
+        OutViewportTransform.Scale.x = (ViewportExtents.Max.x - ViewportExtents.Min.x) / ( Extents.Max.x -  Extents.Min.x);
+        OutViewportTransform.Scale.y = (ViewportExtents.Max.y - ViewportExtents.Min.y) / ( Extents.Max.y -  Extents.Min.y);
+        OutViewportTransform.Translation.x = ( Extents.Max.x * ViewportExtents.Min.x -  Extents.Min.x * ViewportExtents.Max.x) / ( Extents.Max.x -  Extents.Min.x);
+        OutViewportTransform.Translation.y = ( Extents.Max.y * ViewportExtents.Min.y -  Extents.Min.y * ViewportExtents.Max.y) / ( Extents.Max.y -  Extents.Min.y);
     }
     
-    void ViewportTransform(const PointType2d& ScaleTransform, const PointType2d& NormalizationTransform,
-        const std::vector<PointType2d>& Points, std::vector<PointType2d>& OutPoints)
+    void ToViewport(const ViewportTransform& Transform, const std::vector<Point2D>& Points, std::vector<Point2D>& OutPoints)
     {
         OutPoints.resize(Points.size());
         for (size_t n = 0; n < Points.size(); ++n)
         {
-            OutPoints[n].x = Points[n].x * ScaleTransform.x + NormalizationTransform.x;
-            OutPoints[n].y = ViewportExtents.Max.y - (Points[n].y * ScaleTransform.y + NormalizationTransform.y);
+            OutPoints[n].x = Points[n].x * Transform.Scale.x + Transform.Translation.x;
+            OutPoints[n].y = ViewportExtents.Max.y - (Points[n].y * Transform.Scale.y + Transform.Translation.y);
         }
     }
 
-    void ViewportTransform(const PointType2d& ScaleTransform, const PointType2d& NormalizationTransform,
-        const LineType2d& Line, LineType2d& OutLine)
+    void ToViewport(const ViewportTransform& Transform, const Line2D& Line, Line2D& OutLine)
     {
-        OutLine.first = {Line.first.x * ScaleTransform.x + NormalizationTransform.x, ViewportExtents.Max.y -  (Line.first.y * ScaleTransform.y + NormalizationTransform.y)};
-        OutLine.second = {Line.second.x * ScaleTransform.x + NormalizationTransform.x, ViewportExtents.Max.y - (Line.second.y * ScaleTransform.y + NormalizationTransform.y)};    
+        OutLine.Start = {Line.Start.x * Transform.Scale.x + Transform.Translation.x, ViewportExtents.Max.y -  (Line.Start.y * Transform.Scale.y + Transform.Translation.y)};
+        OutLine.End  = {Line.End.x * Transform.Scale.x + Transform.Translation.x, ViewportExtents.Max.y - (Line.End.y * Transform.Scale.y + Transform.Translation.y)};    
     }
 
-    void DataPointToViewport(const PointType2d& ScaleTransform, const PointType2d& NormalizationTransform,
-        const PointType2d& Point, PointType2d& OutPoint)
+    void ToViewport(const ViewportTransform& Transform, const Point2D& Point, Point2D& OutPoint)
     {
-        OutPoint.x = Point.x * ScaleTransform.x + NormalizationTransform.x;
-        OutPoint.y = ViewportExtents.Max.y -  (Point.y * ScaleTransform.y + NormalizationTransform.y);
+        OutPoint.x = Point.x * Transform.Scale.x + Transform.Translation.x;
+        OutPoint.y = ViewportExtents.Max.y - (Point.y * Transform.Scale.y + Transform.Translation.y);    
     }
-
-    void GenerateTransforms(PointType2d& OutScaleTransform, PointType2d& OutNormalizationTransform)
-    {
-        GenerateTransforms(MaximalDataRange, OutScaleTransform, OutNormalizationTransform);
-    }
-
-    void DataVectorToViewport(const PointType2d& ScaleTransform, const PointType2d& NormalizationTransform, const PointType2d& Vector, PointType2d& OutVector)
-    {
-        DataPointToViewport(ScaleTransform, NormalizationTransform, {Vector.x + MaximalDataRange.Min.x, Vector.y + MaximalDataRange.Min.y}, OutVector);
-    }
-
+    
     void DrawLine(float x0, float y0, float x1, float y1)
     {
         LineBuffer.push_back({
             {x0,y0}, {x1,y1}
         });
-    }
-
-    void ClearLines()
-    {
-        LineBuffer.clear();   
-    }
-
-    void ClearText()
-    {
-        TextBuffer.clear();  
     }
 
     void PlotCurve(const Curve2D& Curve)
@@ -109,13 +88,12 @@ namespace Ui
         MaximalDataRange |= Curve.Extents;
     }
 
-    void ClearCurves()
+    void AddPlot(const Plot& InPlot)
     {
-        CurveBuffer.clear();
-        MaximalDataRange = EmptyRange2D;
+        PlotBuffer.push_back(InPlot);
     }
 
-    void DrawText(const std::string& Text, const PointType2d& Position)
+    void DrawText(const std::string& Text, const Point2D& Position)
     {
         TextBuffer.push_back({
             Text,
@@ -123,18 +101,22 @@ namespace Ui
         });
     }
 
+    void ClearPlots()
+    {
+        PlotBuffer.clear();
+        MaximalDataRange = EmptyRange2D;   
+    }
+
     Range2D GetPlotRange()
     {
         return MaximalDataRange;   
     }
-
-   
 }
 
 using namespace Ui;
-namespace
+namespace Renderer
 {
-    void RenderFilledCircle(float centerX, float centerY, float radius)
+    static void RenderFilledCircle(float centerX, float centerY, float radius)
     {
         // Using the midpoint circle algorithm
         const float diameter = radius * 2;
@@ -172,31 +154,7 @@ namespace
         }
     }
 
-    void RenderCurves()
-    {
-        for (auto& Curve : CurveBuffer)
-        {
-            std::vector<Point2D> TransformedPoints;
-            PointType2d ScaleTransform;
-            PointType2d NormalizationTransform;
-            GenerateTransforms(MaximalDataRange, ScaleTransform, NormalizationTransform);
-            ViewportTransform(ScaleTransform, NormalizationTransform, Curve.Points, TransformedPoints);
-
-            Point2D& PrevPoint = TransformedPoints[0];
-            for (size_t n = 1; n < TransformedPoints.size(); ++n)
-            {
-                RenderFilledCircle(TransformedPoints[n].x, TransformedPoints[n].y, 2.0f);
-                SDL_RenderLine(SdlRenderer,
-                               PrevPoint.x,
-                               PrevPoint.y,
-                               TransformedPoints[n].x,
-                               TransformedPoints[n].y);
-                PrevPoint = TransformedPoints[n];
-            }
-        }
-    }
-
-    void RenderLines()
+    static void RenderLines()
     {
         if (LineBuffer.empty())
         {
@@ -205,10 +163,10 @@ namespace
         for (auto& Line : LineBuffer)
         {
             SDL_RenderLine(SdlRenderer,
-                           Line.first.x,
-                           Line.first.y,
-                           Line.second.x,
-                           Line.second.y);
+                           Line.Start.x,
+                           Line.Start.y,
+                           Line.End.x,
+                           Line.End.y);
         }
     }
 
@@ -219,7 +177,7 @@ namespace
         return textTexture;
     }
 
-    void RenderText()
+    static void RenderText()
     {
         if ( SdlFont == nullptr )
         {
@@ -281,7 +239,62 @@ namespace
         }
         return SDL_APP_CONTINUE;
     }
+
+    class PlotRenderer
+    {
+    public:
+        static void RenderPlots(const PlotBufferType& Plots)
+        {
+            for (auto& Plot : Plots)
+            {
+                ViewportTransform Transform;
+                GenerateTransform(Plot.GetExtents(), Transform);
+                for (const auto & Curve : Plot.Curves)
+                {
+                    std::vector<Point2D> TransformedPoints;
+                    ToViewport(Transform, Curve.Points, TransformedPoints);
+                    Point2D& PrevPoint = TransformedPoints[0];
+                    for (size_t n = 1; n < TransformedPoints.size(); ++n)
+                    {
+                        SDL_RenderLine(SdlRenderer,
+                                       PrevPoint.x,
+                                       PrevPoint.y,
+                                       TransformedPoints[n].x,
+                                       TransformedPoints[n].y);
+                        RenderFilledCircle(TransformedPoints[n].x, TransformedPoints[n].y, 2.0f);
+                        PrevPoint = TransformedPoints[n];
+                    }
+                    RenderFilledCircle(PrevPoint.x, PrevPoint.y, 2.0f);
+                }
+                
+                for (const auto & Line : Plot.Lines)
+                {
+                    Line2D TransformedLine;
+                    ToViewport(Transform, Line, TransformedLine);
+                    SDL_RenderLine(SdlRenderer,
+                        TransformedLine.Start.x,
+                        TransformedLine.Start.y,
+                        TransformedLine.End.x,
+                        TransformedLine.End.y);
+                }
+
+                for (const auto & Label : Plot.Labels)
+                {
+                    SDL_Color TextColor = {0, 0, 0, 255};
+                    if ( SDL_Texture* TextTexture = RenderText(Label.String, TextColor) )
+                    {
+                        float textWidth, textHeight;
+                        SDL_GetTextureSize(TextTexture, &textWidth, &textHeight);
+                        SDL_FRect destRect = {Label.Position.x, Label.Position.y, textWidth, textHeight};
+                        SDL_RenderTexture(SdlRenderer, TextTexture, nullptr, &destRect);
+                        SDL_DestroyTexture(TextTexture);
+                    }
+                }
+            }
+        }
+    };
 }
+using namespace Renderer;
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 {
@@ -299,7 +312,7 @@ SDL_AppResult SDL_AppIterate(void* /*appstate*/)
     SDL_RenderClear(SdlRenderer);
     
     SDL_SetRenderDrawColor(SdlRenderer, 64, 64, 64, 255);
-    RenderCurves();
+    PlotRenderer::RenderPlots(PlotBuffer);
     
     SDL_SetRenderDrawColor(SdlRenderer, 128, 128, 128, 255);
     RenderLines();

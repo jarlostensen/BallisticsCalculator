@@ -3,6 +3,11 @@
 #include <string>
 #include <vector>
 
+namespace Renderer
+{
+    class PlotRenderer;
+}
+
 namespace Ui
 {
     struct Point2D
@@ -45,6 +50,11 @@ namespace Ui
             return Min.x < Max.x && Min.y < Max.y;
         }
 
+        bool IsEmpty() const
+        {
+            return Min.x > Max.x || Min.y > Max.y;
+        }
+
         Range2D& operator&=(const Range2D& rhs)
         {
             Min.x = std::max(Min.x, rhs.Min.x);
@@ -62,6 +72,15 @@ namespace Ui
             Max.y = std::max(Max.y, rhs.Max.y);
             return *this;
         }
+
+        Range2D& operator|=(const Point2D& rhs)
+        {
+            Min.x = std::min(Min.x, rhs.x);
+            Min.y = std::min(Min.y, rhs.y);
+            Max.x = std::max(Max.x, rhs.x);
+            Max.y = std::max(Max.y, rhs.y);
+            return *this;
+        }
         
         float Width() const
         {
@@ -75,6 +94,17 @@ namespace Ui
     };
     constexpr Range2D EmptyRange2D = {{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()}, {std::numeric_limits<float>::min(), std::numeric_limits<float>::min()}};
 
+    struct Label2D
+    {
+        std::string String;
+        Point2D Position;    
+    };
+    struct Line2D
+    {
+        Point2D Start;
+        Point2D End;   
+    };
+    
     struct Curve2D
     {
         std::vector<Point2D> Points;
@@ -102,21 +132,54 @@ namespace Ui
         }
     };
 
-    using PointType2d = Point2D;
-    using LineType2d = std::pair<PointType2d, PointType2d>;
-    
-    void GenerateTransforms(PointType2d& OutScaleTransform, PointType2d& OutNormalizationTransform);
-    void DataVectorToViewport(const PointType2d& ScaleTransform, const PointType2d& NormalizationTransform, const PointType2d& Vector, PointType2d& OutVector);
-    void DataPointToViewport(const PointType2d& ScaleTransform, const PointType2d& NormalizationTransform, const PointType2d& Point, PointType2d& OutPoint);
-    
-    void DrawLine(float x0, float y0, float x1, float y1);
-    void DrawText(const std::string& Text, const PointType2d& Position);
+    class Plot
+    {
+        std::vector<Curve2D> Curves;
+        std::vector<Label2D> Labels;
+        std::vector<Line2D> Lines;
+        Range2D Extents;
 
-    void ClearLines();
-    void ClearText();
-    
-    void PlotCurve(const Curve2D& Curve);
-    void ClearCurves();
+        friend class Renderer::PlotRenderer;
+    public:
+        Plot()
+        {
+            Extents = EmptyRange2D;
+        }
+
+        void AddCurve(const Curve2D& Curve)
+        {
+            Curves.push_back(Curve);
+            Extents |= Curve.Extents;
+        }
+
+        void AddLabel(const std::string& String, const Point2D& Position)
+        {
+            Labels.push_back({String, Position});
+            Extents |= Position;
+        }
+
+        void AddLine(const Point2D& Start, const Point2D& End)
+        {
+            Lines.push_back({Start, End});
+            Extents |= {Start, End};
+        }
+
+        bool IsEmpty() const
+        {
+            return Extents.IsEmpty();
+        }
+
+        Range2D GetExtents() const
+        {
+            return Extents;
+        }
+    };
+
+    void DrawLine(float x0, float y0, float x1, float y1);
+    void DrawText(const std::string& Text, const Point2D& Position);
+
+    void ClearPlots();
+    void AddPlot(const Plot& InPlot);
     
     Range2D GetPlotRange();
     

@@ -20,23 +20,45 @@ namespace
     float MinX = std::numeric_limits<float>::max();
     float MinY = std::numeric_limits<float>::max();
 
-    void DrawTrajectory(bool ClearCurrent)
+    Plot TrajectoryPlot;
+
+    void PlotTrajectory()
     {
 #if WITH_SDL
-        if (ClearCurrent)
-        {
-            ClearCurves();   
-        }
         Curve2D Curve;
         for (size_t nQ = 1; nQ < TrajectoryDataPoints.size(); ++nQ)
         {
             Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY);
         }
-        PlotCurve(Curve);
+        TrajectoryPlot.AddCurve(Curve);
 
-        PointType2d ScaleTransform;
-        PointType2d NormalizationTransform;
-        GenerateTransforms(ScaleTransform, NormalizationTransform);
+        TrajectoryPlot.AddLine({MinX,FiringData.Height}, {MaxX,FiringData.Height});
+        TrajectoryPlot.AddLabel("Zero", {FiringData.ZeroDistance,FiringData.Height});
+        
+        // // try to fit one tick per 25 meters
+        // PointType2d TickVector = { 25.0f, FiringData.Height+0.01f }; // every 25 meters, 1 cm high
+        // const int NumTicks = static_cast<int>((DataRangeMax.x - DataRangeMin.x) / TickVector.x);
+        // for (int nTick = 0; nTick < NumTicks; nTick++)
+        // {
+        //     PointType2d ViewportTickVector;
+        //     DataPointToViewport(ScaleTransform, NormalizationTransform, TickVector, ViewportTickVector);
+        //     const float ThisTickHalfHeight = (nTick & 1) ? 6 : 3; 
+        //     
+        //     DrawLine(ViewportTickVector.x, ViewportMidY - ThisTickHalfHeight, ViewportTickVector.x, ViewportMidY + ThisTickHalfHeight);
+        //     DrawText(std::format("{:}", (nTick+1)*25), { ViewportTickVector.x, ViewportMidY + ThisTickHalfHeight});
+        //     TickVector.x += 25.0f;
+        // }
+        //
+        // const PointType2d ZeroPoint = { FiringData.ZeroDistance, FiringData.Height };
+        // PointType2d ViewportZeroPoint;
+        // DataPointToViewport(ScaleTransform, NormalizationTransform, ZeroPoint, ViewportZeroPoint);
+        // DrawText("[Zero]", ViewportZeroPoint);
+        // DrawLine(ViewportZeroPoint.x+2, ViewportMin.y, ViewportZeroPoint.x, ViewportMax.y);
+
+        DrawText(std::format("Muzzle velocity is {:.1f}m/s", BulletData.MuzzleVelocityMs), {10.f, 25.f});
+        DrawText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
+        
+        AddPlot(TrajectoryPlot);
 #else
         std::cout << "T\tX\tY\tVx\n";
         for (const Ballistics::TrajectoryDataPoint& Q : TrajectoryDataPoints)
@@ -45,50 +67,6 @@ namespace
             std::cout << std::fixed << std::setprecision(2) << Q.T << "\t" << Q.DistanceX << "\t" << Q.DistanceY*100.0f << " cm\t" << Q.VelocityX << " m/s (" << (Q.VelocityX * Ballistics::MsToFtS) << " ft/s)\t" << KineticEnergy << " Joules\n";
         }
 #endif
-    }
-
-    void DrawGrid()
-    {
-        const Range2D MaximalDataRange = GetPlotRange();
-        if (MaximalDataRange.IsNonEmpty())
-        {
-            ClearLines();
-            ClearText();
-            
-            PointType2d ScaleTransform;
-            PointType2d NormalizationTransform;
-            GenerateTransforms(ScaleTransform, NormalizationTransform);
-
-            const PointType2d DataRangeMin = MaximalDataRange.Min;
-            const PointType2d DataRangeMax = MaximalDataRange.Max;
-            PointType2d ViewportMax;
-            PointType2d ViewportMin;
-            DataPointToViewport(ScaleTransform, NormalizationTransform, DataRangeMin, ViewportMin);
-            DataPointToViewport(ScaleTransform, NormalizationTransform, DataRangeMax, ViewportMax);
-            
-            const float ViewportMidY = (ViewportMax.y + ViewportMin.y)/2.0f; 
-            DrawLine(ViewportMin.x, ViewportMidY, ViewportMax.x, ViewportMidY);
-            
-            // try to fit one tick per 25 meters
-            PointType2d TickVector = { 25.0f, FiringData.Height+0.01f }; // every 25 meters, 1 cm high
-            const int NumTicks = static_cast<int>((DataRangeMax.x - DataRangeMin.x) / TickVector.x);
-            for (int nTick = 0; nTick < NumTicks; nTick++)
-            {
-                PointType2d ViewportTickVector;
-                DataPointToViewport(ScaleTransform, NormalizationTransform, TickVector, ViewportTickVector);
-                const float ThisTickHalfHeight = (nTick & 1) ? 6 : 3; 
-                
-                DrawLine(ViewportTickVector.x, ViewportMidY - ThisTickHalfHeight, ViewportTickVector.x, ViewportMidY + ThisTickHalfHeight);
-                DrawText(std::format("{:}", (nTick+1)*25), { ViewportTickVector.x, ViewportMidY + ThisTickHalfHeight});
-                TickVector.x += 25.0f;
-            }
-
-            const PointType2d ZeroPoint = { FiringData.ZeroDistance, FiringData.Height };
-            PointType2d ViewportZeroPoint;
-            DataPointToViewport(ScaleTransform, NormalizationTransform, ZeroPoint, ViewportZeroPoint);
-            DrawText("[Zero]", ViewportZeroPoint);
-            DrawLine(ViewportZeroPoint.x+2, ViewportMin.y, ViewportZeroPoint.x, ViewportMax.y);
-        }
     }
 
     void Solve()
@@ -133,14 +111,13 @@ namespace
 void AppInit()
 {
     Solve();
-    DrawTrajectory(true);
-    DrawGrid();
-    DrawText(std::format("Muzzle velocity is {:.1f}m/s", BulletData.MuzzleVelocityMs), {10.f, 25.f});
-    DrawText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
+    PlotTrajectory();
 }
+
 void AppUpdate()
 {
-    DrawGrid();
+    ClearPlots();
+    PlotTrajectory();
 }
 #else
 int main(int /*argc*/, char** /*argv*/)
