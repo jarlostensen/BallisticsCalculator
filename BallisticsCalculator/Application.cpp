@@ -6,170 +6,22 @@
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
+using namespace Ui;
 namespace
 {
     SDL_Window* SdlWindow = NULL;
     SDL_Renderer* SdlRenderer = NULL;
-    TTF_Font* SdlFont = nullptr;    
-}
-
-namespace Ui
-{
-    using LineBufferType = std::vector<Line2D>;
-    using CurveBufferType = std::vector<Curve2D>;
-    using TextBufferType = std::vector<Label2D>;
-    using PlotBufferType = std::vector<PlotPtr>;
-    LineBufferType LineBuffer;
-    CurveBufferType CurveBuffer;
-    TextBufferType TextBuffer;
-    PlotBufferType PlotBuffer;
-
-    struct ViewportTransform
-    {
-        Point2D Scale;
-        Point2D Translation;
-    };
+    TTF_Font* SdlFont = nullptr;
 
     constexpr Range2D ViewportMargins{{2.0f,2.0f}, {2.0f,2.0f}};
     Range2D ViewportExtents = {Point2D(0.0f,0.0f) + ViewportMargins.Min, Point2D(1200.0f,900.0f) - ViewportMargins.Max};
-    Range2D MaximalDataRange = EmptyRange2D;
 
-    void UpdateViewportExtents()
+    void UpdateViewportExtents(int ViewportWidth, int ViewportHeight)
     {
-        int ViewPortWidth;
-        int ViewPortHeight;
-        SDL_GetRenderOutputSize(SdlRenderer, &ViewPortWidth, &ViewPortHeight);
         ViewportExtents.Min.x = 0.0f;
         ViewportExtents.Min.y = 0.0f;
-        ViewportExtents.Max.x = static_cast<float>(ViewPortWidth);
-        ViewportExtents.Max.y = static_cast<float>(ViewPortHeight);
-    }
-
-    void GenerateTransform(const Range2D& Extents, const Range2D& InViewportExtents, ViewportTransform& OutViewportTransform)
-    {
-        OutViewportTransform.Scale.x = (InViewportExtents.Max.x - InViewportExtents.Min.x) / ( Extents.Max.x -  Extents.Min.x);
-        OutViewportTransform.Scale.y = (InViewportExtents.Max.y - InViewportExtents.Min.y) / ( Extents.Max.y -  Extents.Min.y);
-        OutViewportTransform.Translation.x = ( Extents.Max.x * InViewportExtents.Min.x -  Extents.Min.x * InViewportExtents.Max.x) / ( Extents.Max.x -  Extents.Min.x);
-        OutViewportTransform.Translation.y = ( Extents.Max.y * InViewportExtents.Min.y -  Extents.Min.y * InViewportExtents.Max.y) / ( Extents.Max.y -  Extents.Min.y);
-    }
-
-    void GenerateTransform(const Range2D& Extents, ViewportTransform& OutViewportTransform)
-    {
-        OutViewportTransform.Scale.x = (ViewportExtents.Max.x - ViewportExtents.Min.x) / ( Extents.Max.x -  Extents.Min.x);
-        OutViewportTransform.Scale.y = (ViewportExtents.Max.y - ViewportExtents.Min.y) / ( Extents.Max.y -  Extents.Min.y);
-        OutViewportTransform.Translation.x = ( Extents.Max.x * ViewportExtents.Min.x -  Extents.Min.x * ViewportExtents.Max.x) / ( Extents.Max.x -  Extents.Min.x);
-        OutViewportTransform.Translation.y = ( Extents.Max.y * ViewportExtents.Min.y -  Extents.Min.y * ViewportExtents.Max.y) / ( Extents.Max.y -  Extents.Min.y);
-    }
-    
-    void ToViewport(const ViewportTransform& Transform, const std::vector<Point2D>& Points, std::vector<Point2D>& OutPoints)
-    {
-        OutPoints.resize(Points.size());
-        for (size_t n = 0; n < Points.size(); ++n)
-        {
-            OutPoints[n].x = Points[n].x * Transform.Scale.x + Transform.Translation.x;
-            OutPoints[n].y = ViewportExtents.Max.y - (Points[n].y * Transform.Scale.y + Transform.Translation.y);
-        }
-    }
-
-    void ToViewport(const ViewportTransform& Transform, const Line2D& Line, Line2D& OutLine)
-    {
-        OutLine.Start = {Line.Start.x * Transform.Scale.x + Transform.Translation.x, ViewportExtents.Max.y -  (Line.Start.y * Transform.Scale.y + Transform.Translation.y)};
-        OutLine.End  = {Line.End.x * Transform.Scale.x + Transform.Translation.x, ViewportExtents.Max.y - (Line.End.y * Transform.Scale.y + Transform.Translation.y)};    
-    }
-
-    void ToViewport(const ViewportTransform& Transform, const Point2D& Point, Point2D& OutPoint)
-    {
-        OutPoint.x = Point.x * Transform.Scale.x + Transform.Translation.x;
-        OutPoint.y = ViewportExtents.Max.y - (Point.y * Transform.Scale.y + Transform.Translation.y);    
-    }
-    
-    void DrawLine(float x0, float y0, float x1, float y1)
-    {
-        LineBuffer.push_back({
-            {x0,y0}, {x1,y1}
-        });
-    }
-
-    void AddPlot(PlotPtr InPlot)
-    {
-        PlotBuffer.push_back(InPlot);
-    }
-
-    void DrawText(const std::string& Text, const Point2D& Position)
-    {
-        TextBuffer.push_back({
-            Text,
-            Position
-        });
-    }
-
-    void ClearPlots()
-    {
-        PlotBuffer.clear();
-        MaximalDataRange = EmptyRange2D;   
-    }
-
-    Range2D GetPlotRange()
-    {
-        return MaximalDataRange;   
-    }
-}
-
-using namespace Ui;
-namespace Renderer
-{
-    static void RenderFilledCircle(float centerX, float centerY, float radius)
-    {
-        // Using the midpoint circle algorithm
-        const float diameter = radius * 2;
-        float x = radius - 1;
-        float y = 0;
-        float dx = 1;
-        float dy = 1;
-        float error = dx - diameter;
-
-        while (x >= y) {
-            // Draw horizontal lines for each quadrant to fill the circle
-            SDL_RenderLine(SdlRenderer, 
-                centerX - x, centerY + y, 
-                centerX + x, centerY + y);
-            SDL_RenderLine(SdlRenderer, 
-                centerX - x, centerY - y, 
-                centerX + x, centerY - y);
-            SDL_RenderLine(SdlRenderer, 
-                centerX - y, centerY + x, 
-                centerX + y, centerY + x);
-            SDL_RenderLine(SdlRenderer, 
-                centerX - y, centerY - x, 
-                centerX + y, centerY - x);
-
-            if (error <= 0) {
-                y++;
-                error += dy;
-                dy += 2;
-            }
-            if (error > 0) {
-                x--;
-                dx += 2;
-                error += dx - diameter;
-            }
-        }
-    }
-
-    static void RenderLines()
-    {
-        if (LineBuffer.empty())
-        {
-            return;
-        }
-        for (auto& Line : LineBuffer)
-        {
-            SDL_RenderLine(SdlRenderer,
-                           Line.Start.x,
-                           Line.Start.y,
-                           Line.End.x,
-                           Line.End.y);
-        }
+        ViewportExtents.Max.x = static_cast<float>(ViewportWidth);
+        ViewportExtents.Max.y = static_cast<float>(ViewportHeight);
     }
 
     SDL_Texture* RenderText(const std::string &text, SDL_Color color) {
@@ -179,26 +31,35 @@ namespace Renderer
         return textTexture;
     }
 
-    static void RenderText()
+    struct SdlRendererImpl : Ui::IRenderer
     {
-        if ( SdlFont == nullptr )
-        {
-            return;
-        }
-        for (auto& Text : TextBuffer)
+        SdlRendererImpl() =  default;
+        ~SdlRendererImpl() override = default;
+        
+        void DrawText(const std::string& Text, const Ui::Point2D& Position) override
         {
             SDL_Color TextColor = {0, 0, 0, 255};
-            if ( SDL_Texture* TextTexture = RenderText(Text.String, TextColor) )
+            if ( SDL_Texture* TextTexture = RenderText(Text, TextColor) )
             {
                 float textWidth, textHeight;
                 SDL_GetTextureSize(TextTexture, &textWidth, &textHeight);
-                SDL_FRect destRect = {Text.Position.x, Text.Position.y, textWidth, textHeight};
+                SDL_FRect destRect = {Position.x, Position.y, textWidth, textHeight};
                 SDL_RenderTexture(SdlRenderer, TextTexture, nullptr, &destRect);
                 SDL_DestroyTexture(TextTexture);
             }
         }
-    }
-    
+        
+        void DrawLine(float x0, float y0, float x1, float y1) override
+        {
+            SDL_RenderLine(SdlRenderer, x0, y0, x1, y1);
+        }
+        
+        Range2D GetViewportExtents() override
+        {
+            return ViewportExtents;
+        }
+    };
+
     SDL_AppResult SdlInit(void** appstate, int argc, char* argv[])
     {
         (void)appstate;
@@ -221,8 +82,8 @@ namespace Renderer
         {
             SDL_Log("Failed to load font: SDL_Ttf error: %s\n", SDL_GetError());
         }
-        
-        
+
+        SetRenderer(std::make_shared<SdlRendererImpl>());
         AppInit();
 
         return SDL_APP_CONTINUE;
@@ -236,72 +97,18 @@ namespace Renderer
         }
         if (event->type == SDL_EVENT_WINDOW_RESIZED)
         {
-            UpdateViewportExtents();
+            int ViewPortWidth;
+            int ViewPortHeight;
+            SDL_GetRenderOutputSize(SdlRenderer, &ViewPortWidth, &ViewPortHeight);
+            UpdateViewportExtents(ViewPortWidth, ViewPortHeight);
             AppUpdate();
         }
         return SDL_APP_CONTINUE;
     }
 
-    class PlotRenderer
-    {
-    public:
-        static void RenderPlots(const PlotBufferType& Plots)
-        {
-            //TESTING:
-            Range2D ViewportWindowExtents = ViewportExtents;
-            ViewportWindowExtents.Max.y *= 0.75f;
-            
-            for (auto& Plot : Plots)
-            {
-                ViewportTransform Transform;
-                GenerateTransform(Plot->GetExtents(), ViewportWindowExtents, Transform);
-                for (const auto & Curve : Plot->Curves)
-                {
-                    std::vector<Point2D> TransformedPoints;
-                    ToViewport(Transform, Curve.Points, TransformedPoints);
-                    Point2D& PrevPoint = TransformedPoints[0];
-                    for (size_t n = 1; n < TransformedPoints.size(); ++n)
-                    {
-                        SDL_RenderLine(SdlRenderer,
-                                       PrevPoint.x,
-                                       PrevPoint.y,
-                                       TransformedPoints[n].x,
-                                       TransformedPoints[n].y);
-                        RenderFilledCircle(TransformedPoints[n].x, TransformedPoints[n].y, 2.0f);
-                        PrevPoint = TransformedPoints[n];
-                    }
-                    RenderFilledCircle(PrevPoint.x, PrevPoint.y, 2.0f);
-                }
-                
-                for (const auto & Line : Plot->Lines)
-                {
-                    Line2D TransformedLine;
-                    ToViewport(Transform, Line, TransformedLine);
-                    SDL_RenderLine(SdlRenderer,
-                        TransformedLine.Start.x,
-                        TransformedLine.Start.y,
-                        TransformedLine.End.x,
-                        TransformedLine.End.y);
-                }
-
-                for (const auto & Label : Plot->Labels)
-                {
-                    SDL_Color TextColor = {0, 0, 0, 255};
-                    if ( SDL_Texture* TextTexture = RenderText(Label.String, TextColor) )
-                    {
-                        float textWidth, textHeight;
-                        SDL_GetTextureSize(TextTexture, &textWidth, &textHeight);
-                        Point2D TransformedLabelPosition;
-                        ToViewport(Transform, Label.Position, TransformedLabelPosition);
-                        SDL_FRect destRect = {TransformedLabelPosition.x, TransformedLabelPosition.y, textWidth, textHeight};
-                        SDL_RenderTexture(SdlRenderer, TextTexture, nullptr, &destRect);
-                        SDL_DestroyTexture(TextTexture);
-                    }
-                }
-            }
-        }
-    };
 }
+
+
 using namespace Renderer;
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
@@ -320,12 +127,11 @@ SDL_AppResult SDL_AppIterate(void* /*appstate*/)
     SDL_RenderClear(SdlRenderer);
     
     SDL_SetRenderDrawColor(SdlRenderer, 64, 64, 64, 255);
-    PlotRenderer::RenderPlots(PlotBuffer);
+    RenderPlots();
     
-    SDL_SetRenderDrawColor(SdlRenderer, 128, 128, 128, 255);
-    RenderLines();
-
-    RenderText();
+    //SDL_SetRenderDrawColor(SdlRenderer, 128, 128, 128, 255);
+    //RenderLines();
+    //RenderText();
     
     SDL_RenderPresent(SdlRenderer);
     

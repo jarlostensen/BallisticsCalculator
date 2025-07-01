@@ -56,8 +56,9 @@ namespace
         // DrawText("[Zero]", ViewportZeroPoint);
         // DrawLine(ViewportZeroPoint.x+2, ViewportMin.y, ViewportZeroPoint.x, ViewportMax.y);
 
-        DrawText(std::format("Muzzle velocity is {:.1f}m/s", BulletData.MuzzleVelocityMs), {10.f, 25.f});
-        DrawText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
+        RendererPtr Renderer = GetRenderer(); 
+        Renderer->DrawText(std::format("Muzzle velocity is {:.1f}m/s", BulletData.MuzzleVelocityMs), {10.f, 25.f});
+        Renderer->DrawText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
         
         AddPlot(TrajectoryPlot);
 #else
