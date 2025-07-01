@@ -18,7 +18,7 @@ namespace Ui
     using LineBufferType = std::vector<Line2D>;
     using CurveBufferType = std::vector<Curve2D>;
     using TextBufferType = std::vector<Label2D>;
-    using PlotBufferType = std::vector<Plot>;
+    using PlotBufferType = std::vector<PlotPtr>;
     LineBufferType LineBuffer;
     CurveBufferType CurveBuffer;
     TextBufferType TextBuffer;
@@ -82,13 +82,7 @@ namespace Ui
         });
     }
 
-    void PlotCurve(const Curve2D& Curve)
-    {
-        CurveBuffer.push_back(Curve);
-        MaximalDataRange |= Curve.Extents;
-    }
-
-    void AddPlot(const Plot& InPlot)
+    void AddPlot(PlotPtr InPlot)
     {
         PlotBuffer.push_back(InPlot);
     }
@@ -248,8 +242,8 @@ namespace Renderer
             for (auto& Plot : Plots)
             {
                 ViewportTransform Transform;
-                GenerateTransform(Plot.GetExtents(), Transform);
-                for (const auto & Curve : Plot.Curves)
+                GenerateTransform(Plot->GetExtents(), Transform);
+                for (const auto & Curve : Plot->Curves)
                 {
                     std::vector<Point2D> TransformedPoints;
                     ToViewport(Transform, Curve.Points, TransformedPoints);
@@ -267,7 +261,7 @@ namespace Renderer
                     RenderFilledCircle(PrevPoint.x, PrevPoint.y, 2.0f);
                 }
                 
-                for (const auto & Line : Plot.Lines)
+                for (const auto & Line : Plot->Lines)
                 {
                     Line2D TransformedLine;
                     ToViewport(Transform, Line, TransformedLine);
@@ -278,7 +272,7 @@ namespace Renderer
                         TransformedLine.End.y);
                 }
 
-                for (const auto & Label : Plot.Labels)
+                for (const auto & Label : Plot->Labels)
                 {
                     SDL_Color TextColor = {0, 0, 0, 255};
                     if ( SDL_Texture* TextTexture = RenderText(Label.String, TextColor) )

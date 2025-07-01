@@ -20,7 +20,7 @@ namespace
     float MinX = std::numeric_limits<float>::max();
     float MinY = std::numeric_limits<float>::max();
 
-    Plot TrajectoryPlot;
+    PlotPtr TrajectoryPlot;
 
     void PlotTrajectory()
     {
@@ -30,10 +30,11 @@ namespace
         {
             Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY);
         }
-        TrajectoryPlot.AddCurve(Curve);
+        TrajectoryPlot->AddCurve(Curve);
 
-        TrajectoryPlot.AddLine({MinX,FiringData.Height}, {MaxX,FiringData.Height});
-        TrajectoryPlot.AddLabel("Zero", {FiringData.ZeroDistance,FiringData.Height});
+        TrajectoryPlot->AddLine({Curve.Extents.Min.x, Curve.Extents.Height()/2.0f}, {Curve.Extents.Max.x, Curve.Extents.Height()/2.0f});
+        TrajectoryPlot->AddLine({FiringData.ZeroDistance, Curve.Extents.Min.y}, {FiringData.ZeroDistance, Curve.Extents.Max.y});
+        TrajectoryPlot->AddLabel("Zero", {Curve.Extents.Width()/2.0f,Curve.Extents.Height()/2.0f});
         
         // // try to fit one tick per 25 meters
         // PointType2d TickVector = { 25.0f, FiringData.Height+0.01f }; // every 25 meters, 1 cm high
@@ -110,6 +111,7 @@ namespace
 #ifdef WITH_SDL
 void AppInit()
 {
+    TrajectoryPlot = Plot::Create();
     Solve();
     PlotTrajectory();
 }

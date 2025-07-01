@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace Renderer
 {
@@ -132,6 +133,8 @@ namespace Ui
         }
     };
 
+    class Plot;
+    using PlotPtr = std::shared_ptr<Plot>;
     class Plot
     {
         std::vector<Curve2D> Curves;
@@ -139,11 +142,22 @@ namespace Ui
         std::vector<Line2D> Lines;
         Range2D Extents;
 
+        struct PlotPrivate
+        {
+            explicit PlotPrivate() = default;
+        };
+        
+        
         friend class Renderer::PlotRenderer;
     public:
-        Plot()
+        Plot(PlotPrivate&&)
         {
             Extents = EmptyRange2D;
+        }
+        
+        static PlotPtr Create()
+        {
+            return std::make_shared<Plot>(PlotPrivate{});
         }
 
         void AddCurve(const Curve2D& Curve)
@@ -155,13 +169,13 @@ namespace Ui
         void AddLabel(const std::string& String, const Point2D& Position)
         {
             Labels.push_back({String, Position});
-            Extents |= Position;
+            //Extents |= Position;
         }
 
         void AddLine(const Point2D& Start, const Point2D& End)
         {
             Lines.push_back({Start, End});
-            Extents |= {Start, End};
+            //Extents |= {Start, End};
         }
 
         bool IsEmpty() const
@@ -179,7 +193,7 @@ namespace Ui
     void DrawText(const std::string& Text, const Point2D& Position);
 
     void ClearPlots();
-    void AddPlot(const Plot& InPlot);
+    void AddPlot(PlotPtr InPlot);
     
     Range2D GetPlotRange();
     
