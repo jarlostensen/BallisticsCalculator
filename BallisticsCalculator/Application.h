@@ -147,7 +147,6 @@ namespace Ui
             explicit PlotPrivate() = default;
         };
         
-        
         friend class Renderer::PlotRenderer;
     public:
         Plot(PlotPrivate&&)

@@ -34,7 +34,7 @@ namespace
 
         TrajectoryPlot->AddLine({Curve.Extents.Min.x, Curve.Extents.Height()/2.0f}, {Curve.Extents.Max.x, Curve.Extents.Height()/2.0f});
         TrajectoryPlot->AddLine({FiringData.ZeroDistance, Curve.Extents.Min.y}, {FiringData.ZeroDistance, Curve.Extents.Max.y});
-        TrajectoryPlot->AddLabel("Zero", {Curve.Extents.Width()/2.0f,Curve.Extents.Height()/2.0f});
+        TrajectoryPlot->AddLabel("Zero", {FiringData.ZeroDistance+0.1f,Curve.Extents.Max.y});
         
         // // try to fit one tick per 25 meters
         // PointType2d TickVector = { 25.0f, FiringData.Height+0.01f }; // every 25 meters, 1 cm high
@@ -93,7 +93,7 @@ namespace
         Ballistics::SolverParams Solver;
         Solver.MaxTime = 10.0f;
         Solver.TimeStep = 0.01f;
-        Solver.MaxX = 300.0f;
+        Solver.MaxX = 350.0f;
         
         Ballistics::SolveTrajectoryG7(TrajectoryDataPoints, FiringData, Environment, Solver);
 

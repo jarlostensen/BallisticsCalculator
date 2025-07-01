@@ -31,7 +31,7 @@ namespace Ui
     };
 
     constexpr Range2D ViewportMargins{{2.0f,2.0f}, {2.0f,2.0f}};
-    Range2D ViewportExtents = {Point2D(0.0f,0.0f) + ViewportMargins.Min, Point2D(800.0f,600.0f) - ViewportMargins.Max};
+    Range2D ViewportExtents = {Point2D(0.0f,0.0f) + ViewportMargins.Min, Point2D(1200.0f,900.0f) - ViewportMargins.Max};
     Range2D MaximalDataRange = EmptyRange2D;
 
     void UpdateViewportExtents()
@@ -43,6 +43,14 @@ namespace Ui
         ViewportExtents.Min.y = 0.0f;
         ViewportExtents.Max.x = static_cast<float>(ViewPortWidth);
         ViewportExtents.Max.y = static_cast<float>(ViewPortHeight);
+    }
+
+    void GenerateTransform(const Range2D& Extents, const Range2D& InViewportExtents, ViewportTransform& OutViewportTransform)
+    {
+        OutViewportTransform.Scale.x = (InViewportExtents.Max.x - InViewportExtents.Min.x) / ( Extents.Max.x -  Extents.Min.x);
+        OutViewportTransform.Scale.y = (InViewportExtents.Max.y - InViewportExtents.Min.y) / ( Extents.Max.y -  Extents.Min.y);
+        OutViewportTransform.Translation.x = ( Extents.Max.x * InViewportExtents.Min.x -  Extents.Min.x * InViewportExtents.Max.x) / ( Extents.Max.x -  Extents.Min.x);
+        OutViewportTransform.Translation.y = ( Extents.Max.y * InViewportExtents.Min.y -  Extents.Min.y * InViewportExtents.Max.y) / ( Extents.Max.y -  Extents.Min.y);
     }
 
     void GenerateTransform(const Range2D& Extents, ViewportTransform& OutViewportTransform)
@@ -239,10 +247,14 @@ namespace Renderer
     public:
         static void RenderPlots(const PlotBufferType& Plots)
         {
+            //TESTING:
+            Range2D ViewportWindowExtents = ViewportExtents;
+            ViewportWindowExtents.Max.y *= 0.75f;
+            
             for (auto& Plot : Plots)
             {
                 ViewportTransform Transform;
-                GenerateTransform(Plot->GetExtents(), Transform);
+                GenerateTransform(Plot->GetExtents(), ViewportWindowExtents, Transform);
                 for (const auto & Curve : Plot->Curves)
                 {
                     std::vector<Point2D> TransformedPoints;
@@ -279,7 +291,9 @@ namespace Renderer
                     {
                         float textWidth, textHeight;
                         SDL_GetTextureSize(TextTexture, &textWidth, &textHeight);
-                        SDL_FRect destRect = {Label.Position.x, Label.Position.y, textWidth, textHeight};
+                        Point2D TransformedLabelPosition;
+                        ToViewport(Transform, Label.Position, TransformedLabelPosition);
+                        SDL_FRect destRect = {TransformedLabelPosition.x, TransformedLabelPosition.y, textWidth, textHeight};
                         SDL_RenderTexture(SdlRenderer, TextTexture, nullptr, &destRect);
                         SDL_DestroyTexture(TextTexture);
                     }
