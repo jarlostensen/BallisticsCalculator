@@ -158,13 +158,13 @@ namespace Ui
         void AddLabel(const std::string& String, const Point2D& Position)
         {
             Labels.push_back({String, Position});
-            Extents |= Position;
+            //Extents |= Position;
         }
 
         void AddLine(const Point2D& Start, const Point2D& End)
         {
             Lines.push_back({Start, End});
-            Extents |= {Start, End};
+            //Extents |= {Start, End};
         }
 
         bool IsEmpty() const
@@ -190,8 +190,13 @@ namespace Ui
     RendererPtr GetRenderer();
     
     void ClearPlots();
-    void AddPlot(PlotPtr InPlot);
-    void RenderPlots();
+    void DrawPlot(PlotPtr InPlot, const Range2D& ViewportWindow = EmptyRange2D);
+    void DrawLine(const Line2D& Line);
+    void DrawText(const std::string& Text, const Point2D& Position);
+
+    void BeginFrame();
+    void RenderFrame();
+    void EndFrame();
     
     Range2D GetPlotRange();
     

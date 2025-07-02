@@ -12,17 +12,7 @@ namespace
     SDL_Window* SdlWindow = NULL;
     SDL_Renderer* SdlRenderer = NULL;
     TTF_Font* SdlFont = nullptr;
-
-    constexpr Range2D ViewportMargins{{2.0f,2.0f}, {2.0f,2.0f}};
-    Range2D ViewportExtents = {Point2D(0.0f,0.0f) + ViewportMargins.Min, Point2D(1200.0f,900.0f) - ViewportMargins.Max};
-
-    void UpdateViewportExtents(int ViewportWidth, int ViewportHeight)
-    {
-        ViewportExtents.Min.x = 0.0f;
-        ViewportExtents.Min.y = 0.0f;
-        ViewportExtents.Max.x = static_cast<float>(ViewportWidth);
-        ViewportExtents.Max.y = static_cast<float>(ViewportHeight);
-    }
+    Range2D ViewportExtents = {Point2D(0.0f,0.0f), Point2D(1200.0f,900.0f)};
 
     SDL_Texture* RenderText(const std::string &text, SDL_Color color) {
         SDL_Surface* textSurface = TTF_RenderText_Blended(SdlFont, text.data(), text.length(), color);
@@ -84,6 +74,11 @@ namespace
         }
 
         SetRenderer(std::make_shared<SdlRendererImpl>());
+        int ViewportWidth;
+        int ViewportHeight;
+        SDL_GetRenderOutputSize(SdlRenderer, &ViewportWidth, &ViewportHeight);
+        ViewportExtents.Max.x = static_cast<float>(ViewportWidth);
+        ViewportExtents.Max.y = static_cast<float>(ViewportHeight);
         AppInit();
 
         return SDL_APP_CONTINUE;
@@ -97,11 +92,11 @@ namespace
         }
         if (event->type == SDL_EVENT_WINDOW_RESIZED)
         {
-            int ViewPortWidth;
-            int ViewPortHeight;
-            SDL_GetRenderOutputSize(SdlRenderer, &ViewPortWidth, &ViewPortHeight);
-            UpdateViewportExtents(ViewPortWidth, ViewPortHeight);
-            AppUpdate();
+            int ViewportWidth;
+            int ViewportHeight;
+            SDL_GetRenderOutputSize(SdlRenderer, &ViewportWidth, &ViewportHeight);
+            ViewportExtents.Max.x = static_cast<float>(ViewportWidth);
+            ViewportExtents.Max.y = static_cast<float>(ViewportHeight);
         }
         return SDL_APP_CONTINUE;
     }
@@ -127,7 +122,10 @@ SDL_AppResult SDL_AppIterate(void* /*appstate*/)
     SDL_RenderClear(SdlRenderer);
     
     SDL_SetRenderDrawColor(SdlRenderer, 64, 64, 64, 255);
-    RenderPlots();
+    BeginFrame();
+    AppUpdate();
+    RenderFrame();
+    EndFrame();
     
     //SDL_SetRenderDrawColor(SdlRenderer, 128, 128, 128, 255);
     //RenderLines();

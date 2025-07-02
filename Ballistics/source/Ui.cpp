@@ -1,5 +1,7 @@
 ﻿#include "Ui.h"
 
+#include <cassert>
+
 namespace 
 {
     Ui::RendererPtr RendererImpl;
@@ -10,9 +12,9 @@ namespace Ui
     using LineBufferType = std::vector<Line2D>;
     using CurveBufferType = std::vector<Curve2D>;
     using TextBufferType = std::vector<Label2D>;
-    using PlotBufferType = std::vector<PlotPtr>;
+    using PlotBufferType = std::vector<std::pair<PlotPtr, Range2D>>;
+
     LineBufferType LineBuffer;
-    CurveBufferType CurveBuffer;
     TextBufferType TextBuffer;
     PlotBufferType PlotBuffer;
 
@@ -38,40 +40,35 @@ namespace Ui
         for (size_t n = 0; n < Points.size(); ++n)
         {
             OutPoints[n].x = Points[n].x * Transform.Scale.x + Transform.Translation.x;
-            OutPoints[n].y = ViewportExtents.Max.y - (Points[n].y * Transform.Scale.y + Transform.Translation.y);
+            OutPoints[n].y = ViewportExtents.Min.y + (ViewportExtents.Max.y - (Points[n].y * Transform.Scale.y + Transform.Translation.y));
         }
     }
 
     void ToViewport(const ViewportTransform& Transform, const Range2D& ViewportExtents, const Line2D& Line, Line2D& OutLine)
     {
-        OutLine.Start = {Line.Start.x * Transform.Scale.x + Transform.Translation.x, ViewportExtents.Max.y -  (Line.Start.y * Transform.Scale.y + Transform.Translation.y)};
-        OutLine.End  = {Line.End.x * Transform.Scale.x + Transform.Translation.x, ViewportExtents.Max.y - (Line.End.y * Transform.Scale.y + Transform.Translation.y)};    
+        OutLine.Start = {Line.Start.x * Transform.Scale.x + Transform.Translation.x, ViewportExtents.Min.y + (ViewportExtents.Max.y -  (Line.Start.y * Transform.Scale.y + Transform.Translation.y))};
+        OutLine.End  = {Line.End.x * Transform.Scale.x + Transform.Translation.x, ViewportExtents.Min.y + (ViewportExtents.Max.y - (Line.End.y * Transform.Scale.y + Transform.Translation.y))};    
     }
 
     void ToViewport(const ViewportTransform& Transform, const Range2D& ViewportExtents, const Point2D& Point, Point2D& OutPoint)
     {
         OutPoint.x = Point.x * Transform.Scale.x + Transform.Translation.x;
-        OutPoint.y = ViewportExtents.Max.y - (Point.y * Transform.Scale.y + Transform.Translation.y);    
+        OutPoint.y = ViewportExtents.Min.y + (ViewportExtents.Max.y - (Point.y * Transform.Scale.y + Transform.Translation.y));    
     }
     
-    void DrawLine(float x0, float y0, float x1, float y1)
+    void DrawPlot(PlotPtr InPlot, const Range2D& ViewportWindow)
     {
-        LineBuffer.push_back({
-            {x0,y0}, {x1,y1}
-        });
+        PlotBuffer.emplace_back(InPlot, ViewportWindow);
     }
 
-    void AddPlot(PlotPtr InPlot)
+    void DrawLine(const Line2D& Line)
     {
-        PlotBuffer.push_back(InPlot);
+        LineBuffer.push_back(Line);
     }
 
     void DrawText(const std::string& Text, const Point2D& Position)
     {
-        TextBuffer.push_back({
-            Text,
-            Position
-        });
+        TextBuffer.push_back({Text, Position});
     }
 
     void SetRenderer(RendererPtr InRenderer)
@@ -142,15 +139,12 @@ namespace Renderer
     public:
         static void RenderPlots()
         {
-            //TESTING:
-            Range2D ViewportWindowExtents = RendererImpl->GetViewportExtents();
-            ViewportWindowExtents.Max.y *= 0.75f;
-            
             for (auto& Plot : PlotBuffer)
             {
                 ViewportTransform Transform;
-                GenerateTransform(Plot->GetExtents(), ViewportWindowExtents, Transform);
-                for (const auto & Curve : Plot->Curves)
+                Range2D ViewportWindowExtents = Plot.second.IsEmpty() ? RendererImpl->GetViewportExtents() : Plot.second;
+                GenerateTransform(Plot.first->GetExtents(), ViewportWindowExtents, Transform);
+                for (const auto & Curve : Plot.first->Curves)
                 {
                     std::vector<Point2D> TransformedPoints;
                     ToViewport(Transform, ViewportWindowExtents, Curve.Points, TransformedPoints);
@@ -168,7 +162,7 @@ namespace Renderer
                     RenderFilledCircle(PrevPoint.x, PrevPoint.y, 2.0f);
                 }
                 
-                for (const auto & Line : Plot->Lines)
+                for (const auto & Line : Plot.first->Lines)
                 {
                     Line2D TransformedLine;
                     ToViewport(Transform, ViewportWindowExtents, Line, TransformedLine);
@@ -179,7 +173,7 @@ namespace Renderer
                         TransformedLine.End.y);
                 }
 
-                for (const auto & Label : Plot->Labels)
+                for (const auto & Label : Plot.first->Labels)
                 {
                     Point2D TransformedLabelPosition;
                     ToViewport(Transform,ViewportWindowExtents, Label.Position, TransformedLabelPosition);
@@ -192,8 +186,37 @@ namespace Renderer
 
 namespace Ui
 {
-    void RenderPlots()
+    bool bInFrame = false;
+    
+    void BeginFrame()
     {
+        assert(!bInFrame);
+        bInFrame = true;
+        LineBuffer.clear();
+        TextBuffer.clear();
+        PlotBuffer.clear();
+        MaximalDataRange = EmptyRange2D;
+    }
+    
+    void RenderFrame()
+    {
+        assert(bInFrame);
         Renderer::PlotRenderer::RenderPlots();
+
+        for (const auto & Line : LineBuffer)
+        {
+            RendererImpl->DrawLine(Line.Start.x, Line.Start.y, Line.End.x, Line.End.y);
+        }
+
+        for (const auto & Text : TextBuffer)
+        {
+            RendererImpl->DrawText(Text.String, Text.Position);
+        }
+    }
+
+    void EndFrame()
+    {
+        assert(bInFrame);
+        bInFrame = false;
     }
 }
