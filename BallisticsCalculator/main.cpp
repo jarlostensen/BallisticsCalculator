@@ -33,18 +33,20 @@ namespace
                 Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY);
             }
             TrajectoryPlot->AddCurve(Curve);
-
-            const float CurveHeight = Curve.Extents.Height();
-            const float CenterLineYPos = Curve.Extents.Min.y + CurveHeight/2.0f;
-            TrajectoryPlot->AddLine({Curve.Extents.Min.x, CenterLineYPos}, {Curve.Extents.Max.x, CenterLineYPos});
-            TrajectoryPlot->AddLine({FiringData.ZeroDistance, Curve.Extents.Min.y}, {FiringData.ZeroDistance, Curve.Extents.Max.y});
-            TrajectoryPlot->AddLabel("Zero", {FiringData.ZeroDistance+0.1f,Curve.Extents.Max.y});
-        
-            // try to fit one tick per 25 meters
-            Point2D TickVector = { 25.0f, FiringData.Height+0.01f }; // every 25 meters, 1 cm high
-
             const Range2D PlotRange = TrajectoryPlot->GetExtents();
-            const int NumTicks = static_cast<int>((PlotRange.Max.x - PlotRange.Min.x) / TickVector.x);
+            
+            const float CurveHeight = PlotRange.Height();
+            const float CenterLineYPos = PlotRange.Min.y + CurveHeight/2.0f;
+            const float HeightLineXPos = PlotRange.Min.x + 1.0f;
+            TrajectoryPlot->AddLine({PlotRange.Min.x, CenterLineYPos}, {PlotRange.Max.x, CenterLineYPos});
+            TrajectoryPlot->AddLine({HeightLineXPos, PlotRange.Min.y}, {HeightLineXPos, PlotRange.Max.y});
+            TrajectoryPlot->AddLine({FiringData.ZeroDistance, PlotRange.Min.y}, {FiringData.ZeroDistance, PlotRange.Max.y});
+            TrajectoryPlot->AddLabel("Zero", {FiringData.ZeroDistance+0.1f,PlotRange.Max.y});
+
+            // try to fit one tick per 25 meters
+            Point2D TickVector = { 25.0f, PlotRange.Min.y }; // every 25 meters
+            
+            int NumTicks = static_cast<int>((PlotRange.Max.x - PlotRange.Min.x) / TickVector.x);
             for (int nTick = 0; nTick < NumTicks; nTick++)
             {
                 const float ThisTickHalfHeight = (nTick & 1) ? 0.02f : 0.01f;
@@ -52,15 +54,27 @@ namespace
                 TrajectoryPlot->AddLabel(std::format("{:}", (nTick+1)*25), {TickVector.x, CenterLineYPos - 1.1f * ThisTickHalfHeight});
                 TickVector.x += 25.0f;
             }
+
+            // vertical tick marks, one every 1/10th of the height
+            NumTicks = 10;
+            TickVector.x = HeightLineXPos;
+            TickVector.y = PlotRange.Min.y;
+            const float TickHeight = PlotRange.Height() / static_cast<float>(NumTicks);
+            for (int nTick = 0; nTick < NumTicks; nTick++)
+            {
+                TrajectoryPlot->AddLine({TickVector.x, TickVector.y}, {TickVector.x + 1.0f, TickVector.y});
+                TrajectoryPlot->AddLabel(std::format("{:.1f}", TickVector.y), {TickVector.x + 1.1f, TickVector.y});
+                TickVector.y += TickHeight;
+            }
         }
         
         DrawText(std::format("Muzzle velocity is {:.1f}m/s", BulletData.MuzzleVelocityMs), {10.f, 25.f});
         DrawText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();
-        ViewportExtents.Min.x += 100.0f;
-        ViewportExtents.Min.y += 150.0f;
-        ViewportExtents.Max.x -= 100.0f;
-        ViewportExtents.Max.y -= 50.0f;
+        ViewportExtents.Min.x += ViewportExtents.Width()*0.1f;
+        ViewportExtents.Min.y += ViewportExtents.Height()*0.15f;
+        ViewportExtents.Max.x -= ViewportExtents.Width()*0.1f;
+        ViewportExtents.Max.y -= ViewportExtents.Height()*0.15f;
         DrawPlot(TrajectoryPlot, ViewportExtents);
     }
 
@@ -77,7 +91,7 @@ namespace
         Environment.UpdateAirDensityFromTandP();
     
         FiringData.Bullet = BulletData;
-        FiringData.Height = 10.0f;
+        FiringData.Height = 1.0f;
         FiringData.ZeroDistance = 200.0f;
         // roughly one inch at 100m etc
         const float ToleranceM = (2.0f * (FiringData.ZeroDistance * 0.01f)) / 100.0f;
