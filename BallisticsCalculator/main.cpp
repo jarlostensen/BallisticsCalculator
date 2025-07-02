@@ -15,10 +15,6 @@ namespace
     Ballistics::EnvironmentData Environment;
     Ballistics::FiringData FiringData;
     std::vector<Ballistics::TrajectoryDataPoint> TrajectoryDataPoints;
-    float MaxX = std::numeric_limits<float>::min();
-    float MaxY = std::numeric_limits<float>::min();
-    float MinX = std::numeric_limits<float>::max();
-    float MinY = std::numeric_limits<float>::max();
 
     PlotPtr TrajectoryPlot;
 
@@ -105,15 +101,6 @@ namespace
         Solver.MaxX = 350.0f;
         
         Ballistics::SolveTrajectoryG7(TrajectoryDataPoints, FiringData, Environment, Solver);
-
-        for (const Ballistics::TrajectoryDataPoint& Q : TrajectoryDataPoints)
-        {
-            MaxX = std::max(Q.DistanceX, MaxX);
-            MaxY = std::max(Q.DistanceY, MaxY);
-            MinX = std::min(Q.DistanceX, MinX);
-            MinY = std::min(Q.DistanceY, MinY);
-        }
-        
     }
 }
 
