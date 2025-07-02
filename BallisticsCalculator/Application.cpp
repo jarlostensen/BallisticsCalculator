@@ -26,9 +26,9 @@ namespace
         SdlRendererImpl() =  default;
         ~SdlRendererImpl() override = default;
         
-        void DrawText(const std::string& Text, const Ui::Point2D& Position) override
+        void DrawText(const std::string& Text, const Ui::Point2D& Position, ColorRGB Color) override
         {
-            SDL_Color TextColor = {0, 0, 0, 255};
+            SDL_Color TextColor = {Color.R, Color.G, Color.B, 255};
             if ( SDL_Texture* TextTexture = RenderText(Text, TextColor) )
             {
                 float textWidth, textHeight;
@@ -39,8 +39,9 @@ namespace
             }
         }
         
-        void DrawLine(float x0, float y0, float x1, float y1) override
+        void DrawLine(float x0, float y0, float x1, float y1, ColorRGB Color) override
         {
+            SDL_SetRenderDrawColor(SdlRenderer, Color.R, Color.G, Color.B, 255);
             SDL_RenderLine(SdlRenderer, x0, y0, x1, y1);
         }
         

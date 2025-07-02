@@ -32,16 +32,17 @@ namespace
             {
                 Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY);
             }
+            Curve.Color = Magenta;
             TrajectoryPlot->AddCurve(Curve);
             const Range2D PlotRange = TrajectoryPlot->GetExtents();
             
             const float CurveHeight = PlotRange.Height();
             const float CenterLineYPos = PlotRange.Min.y + CurveHeight/2.0f;
             const float HeightLineXPos = PlotRange.Min.x + 1.0f;
-            TrajectoryPlot->AddLine({PlotRange.Min.x, CenterLineYPos}, {PlotRange.Max.x, CenterLineYPos});
-            TrajectoryPlot->AddLine({HeightLineXPos, PlotRange.Min.y}, {HeightLineXPos, PlotRange.Max.y});
-            TrajectoryPlot->AddLine({FiringData.ZeroDistance, PlotRange.Min.y}, {FiringData.ZeroDistance, PlotRange.Max.y});
-            TrajectoryPlot->AddLabel("Zero", {FiringData.ZeroDistance+0.1f,PlotRange.Max.y});
+            TrajectoryPlot->AddLine({PlotRange.Min.x, CenterLineYPos}, {PlotRange.Max.x, CenterLineYPos}, Gray);
+            TrajectoryPlot->AddLine({HeightLineXPos, PlotRange.Min.y}, {HeightLineXPos, PlotRange.Max.y}, Gray);
+            TrajectoryPlot->AddLine({FiringData.ZeroDistance, PlotRange.Min.y}, {FiringData.ZeroDistance, PlotRange.Max.y}, Gray);
+            TrajectoryPlot->AddLabel("Zero", {FiringData.ZeroDistance+0.1f,PlotRange.Max.y}, Blue);
 
             // try to fit one tick per 25 meters
             Point2D TickVector = { 25.0f, PlotRange.Min.y }; // every 25 meters
@@ -50,7 +51,7 @@ namespace
             for (int nTick = 0; nTick < NumTicks; nTick++)
             {
                 const float ThisTickHalfHeight = (nTick & 1) ? 0.02f : 0.01f;
-                TrajectoryPlot->AddLine({TickVector.x, CenterLineYPos - ThisTickHalfHeight}, {TickVector.x, CenterLineYPos + ThisTickHalfHeight});
+                TrajectoryPlot->AddLine({TickVector.x, CenterLineYPos - ThisTickHalfHeight}, {TickVector.x, CenterLineYPos + ThisTickHalfHeight}, Gray);
                 TrajectoryPlot->AddLabel(std::format("{:}", (nTick+1)*25), {TickVector.x, CenterLineYPos - 1.1f * ThisTickHalfHeight});
                 TickVector.x += 25.0f;
             }
@@ -62,7 +63,7 @@ namespace
             const float TickHeight = PlotRange.Height() / static_cast<float>(NumTicks);
             for (int nTick = 0; nTick < NumTicks; nTick++)
             {
-                TrajectoryPlot->AddLine({TickVector.x, TickVector.y}, {TickVector.x + 1.0f, TickVector.y});
+                TrajectoryPlot->AddLine({TickVector.x, TickVector.y}, {TickVector.x + 1.0f, TickVector.y},Gray);
                 TrajectoryPlot->AddLabel(std::format("{:.1f}", TickVector.y), {TickVector.x + 1.1f, TickVector.y});
                 TickVector.y += TickHeight;
             }

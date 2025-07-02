@@ -9,9 +9,9 @@ namespace
 
 namespace Ui
 {
-    using LineBufferType = std::vector<Line2D>;
+    using LineBufferType = std::vector<std::pair<Line2D, ColorRGB>>;
     using CurveBufferType = std::vector<Curve2D>;
-    using TextBufferType = std::vector<Label2D>;
+    using TextBufferType = std::vector<std::pair<Label2D, ColorRGB>>;
     using PlotBufferType = std::vector<std::pair<PlotPtr, Range2D>>;
 
     LineBufferType LineBuffer;
@@ -61,14 +61,14 @@ namespace Ui
         PlotBuffer.emplace_back(InPlot, ViewportWindow);
     }
 
-    void DrawLine(const Line2D& Line)
+    void DrawLine(const Line2D& Line, ColorRGB Color)
     {
-        LineBuffer.push_back(Line);
+        LineBuffer.push_back({Line,Color});
     }
 
-    void DrawText(const std::string& Text, const Point2D& Position)
+    void DrawText(const std::string& Text, const Point2D& Position, ColorRGB Color)
     {
-        TextBuffer.push_back({Text, Position});
+        TextBuffer.push_back({{Text, Position},Color});
     }
 
     void SetRenderer(RendererPtr InRenderer)
@@ -96,7 +96,7 @@ namespace Ui
 using namespace Ui;
 namespace Renderer
 {
-    static void RenderFilledCircle(float centerX, float centerY, float radius)
+    static void RenderFilledCircle(float centerX, float centerY, float radius, ColorRGB color)
     {
         // Using the midpoint circle algorithm
         const float diameter = radius * 2;
@@ -110,16 +110,20 @@ namespace Renderer
             // Draw horizontal lines for each quadrant to fill the circle
             RendererImpl->DrawLine( 
                 centerX - x, centerY + y, 
-                centerX + x, centerY + y);
+                centerX + x, centerY + y,
+                color);
             RendererImpl->DrawLine( 
                 centerX - x, centerY - y, 
-                centerX + x, centerY - y);
+                centerX + x, centerY - y,
+                color);
             RendererImpl->DrawLine( 
                 centerX - y, centerY + x, 
-                centerX + y, centerY + x);
+                centerX + y, centerY + x,
+                color);
             RendererImpl->DrawLine( 
                 centerX - y, centerY - x, 
-                centerX + y, centerY - x);
+                centerX + y, centerY - x,
+                color);
 
             if (error <= 0) {
                 y++;
@@ -155,29 +159,31 @@ namespace Renderer
                                        PrevPoint.x,
                                        PrevPoint.y,
                                        TransformedPoints[n].x,
-                                       TransformedPoints[n].y);
-                        RenderFilledCircle(TransformedPoints[n].x, TransformedPoints[n].y, 2.0f);
+                                       TransformedPoints[n].y,
+                                       Curve.Color);
+                        RenderFilledCircle(TransformedPoints[n].x, TransformedPoints[n].y, 2.0f, Curve.Color);
                         PrevPoint = TransformedPoints[n];
                     }
-                    RenderFilledCircle(PrevPoint.x, PrevPoint.y, 2.0f);
+                    RenderFilledCircle(PrevPoint.x, PrevPoint.y, 2.0f, Curve.Color);
                 }
                 
                 for (const auto & Line : Plot.first->Lines)
                 {
                     Line2D TransformedLine;
-                    ToViewport(Transform, ViewportWindowExtents, Line, TransformedLine);
+                    ToViewport(Transform, ViewportWindowExtents, Line.first, TransformedLine);
                     RendererImpl->DrawLine(
                         TransformedLine.Start.x,
                         TransformedLine.Start.y,
                         TransformedLine.End.x,
-                        TransformedLine.End.y);
+                        TransformedLine.End.y,
+                        Line.second);
                 }
 
                 for (const auto & Label : Plot.first->Labels)
                 {
                     Point2D TransformedLabelPosition;
-                    ToViewport(Transform,ViewportWindowExtents, Label.Position, TransformedLabelPosition);
-                    RendererImpl->DrawText(Label.String, TransformedLabelPosition);
+                    ToViewport(Transform,ViewportWindowExtents, Label.first.Position, TransformedLabelPosition);
+                    RendererImpl->DrawText(Label.first.String, TransformedLabelPosition, Label.second);
                 }
             }
         }
@@ -205,12 +211,12 @@ namespace Ui
 
         for (const auto & Line : LineBuffer)
         {
-            RendererImpl->DrawLine(Line.Start.x, Line.Start.y, Line.End.x, Line.End.y);
+            RendererImpl->DrawLine(Line.first.Start.x, Line.first.Start.y, Line.first.End.x, Line.first.End.y, Line.second);
         }
 
         for (const auto & Text : TextBuffer)
         {
-            RendererImpl->DrawText(Text.String, Text.Position);
+            RendererImpl->DrawText(Text.first.String, Text.first.Position, Text.second);
         }
     }
 

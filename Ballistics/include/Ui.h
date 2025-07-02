@@ -19,6 +19,20 @@ namespace Ui
         constexpr Point2D() = default;
         constexpr Point2D(float x, float y) : x(x), y(y) {}
 
+        Point2D& operator+=(const Point2D& rhs)
+        {
+            x += rhs.x;
+            y += rhs.y;
+            return *this;
+        }
+
+        Point2D operator-=(const Point2D& rhs)
+        {
+            x -= rhs.x;
+            y -= rhs.y;
+            return *this;
+        }
+        
         friend Point2D operator+(const Point2D& lhs, const Point2D& rhs)
         {
             return {lhs.x + rhs.x, lhs.y + rhs.y};
@@ -94,7 +108,31 @@ namespace Ui
         }
     };
     constexpr Range2D EmptyRange2D = {{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()}, {std::numeric_limits<float>::min(), std::numeric_limits<float>::min()}};
+    
+    struct ColorRGB
+    {
+        uint8_t R;
+        uint8_t G;
+        uint8_t B;
+        ColorRGB()
+            : R(0), G(0), B(0)
+        {}
+        constexpr explicit ColorRGB(uint8_t r,uint8_t g,uint8_t b)
+            : R(r), G(g), B(b)
+        {}
+    };
 
+    constexpr ColorRGB Black(0,0,0);
+    constexpr ColorRGB White(255,255,255);
+    constexpr ColorRGB Red(255,0,0);
+    constexpr ColorRGB Green(0,255,0);
+    constexpr ColorRGB Blue(0,0,255);
+    constexpr ColorRGB Yellow(255,255,0);
+    constexpr ColorRGB Magenta(255,0,255);
+    constexpr ColorRGB Cyan(0,255,255);
+    constexpr ColorRGB Gray(128,128,128);
+    constexpr ColorRGB DarkGray(64,64,64);
+    
     struct Label2D
     {
         std::string String;
@@ -110,10 +148,17 @@ namespace Ui
     {
         std::vector<Point2D> Points;
         Range2D Extents;
+        ColorRGB Color;
 
         Curve2D()
         {
-            Extents = EmptyRange2D;    
+            Extents = EmptyRange2D;
+            Color = Black;
+        }
+
+        void SetColor(ColorRGB InColor)
+        {
+            Color = InColor;
         }
         
         void AddPoint(float x, float y)
@@ -128,8 +173,8 @@ namespace Ui
     class Plot
     {
         std::vector<Curve2D> Curves;
-        std::vector<Label2D> Labels;
-        std::vector<Line2D> Lines;
+        std::vector<std::pair<Label2D, ColorRGB>> Labels;
+        std::vector<std::pair<Line2D, ColorRGB>> Lines;
         Range2D Extents;
 
         struct PlotPrivate
@@ -155,16 +200,14 @@ namespace Ui
             Extents |= Curve.Extents;
         }
 
-        void AddLabel(const std::string& String, const Point2D& Position)
+        void AddLabel(const std::string& String, const Point2D& Position, ColorRGB Color=Black)
         {
-            Labels.push_back({String, Position});
-            //Extents |= Position;
+            Labels.push_back({{String, Position},Color});
         }
 
-        void AddLine(const Point2D& Start, const Point2D& End)
+        void AddLine(const Point2D& Start, const Point2D& End, ColorRGB Color=Black)
         {
-            Lines.push_back({Start, End});
-            //Extents |= {Start, End};
+            Lines.push_back({{Start, End},Color});
         }
 
         bool IsEmpty() const
@@ -181,8 +224,8 @@ namespace Ui
     struct IRenderer
     {
         virtual ~IRenderer() = default;
-        virtual void DrawLine(float x0, float y0, float x1, float y1) = 0;
-        virtual void DrawText(const std::string& Text, const Point2D& Position) = 0;
+        virtual void DrawLine(float x0, float y0, float x1, float y1, ColorRGB Color) = 0;
+        virtual void DrawText(const std::string& Text, const Point2D& Position, ColorRGB Color) = 0;
         virtual Range2D GetViewportExtents() = 0;
     };
     using RendererPtr = std::shared_ptr<IRenderer>;
@@ -191,8 +234,8 @@ namespace Ui
     
     void ClearPlots();
     void DrawPlot(PlotPtr InPlot, const Range2D& ViewportWindow = EmptyRange2D);
-    void DrawLine(const Line2D& Line);
-    void DrawText(const std::string& Text, const Point2D& Position);
+    void DrawLine(const Line2D& Line,ColorRGB Color=Black);
+    void DrawText(const std::string& Text, const Point2D& Position, ColorRGB Color=Black);
 
     void BeginFrame();
     void RenderFrame();
