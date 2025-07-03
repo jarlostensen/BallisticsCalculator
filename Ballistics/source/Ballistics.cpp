@@ -130,42 +130,17 @@ namespace Ballistics
 	    
 	    HybridEulerRk4Solver Solver(*this, Environment, SolverParams);
 
-#if CALCULATE_ACCURATE_IMPACT_POINT
-        // track the last DistanceY values for interpolation
-        constexpr int CurveTaiLength = 4;
-        std::array<std::pair<float,float>, CurveTaiLength> CurveTail;
-        int CurveTailTail = 0;
-
-#define CURVE_TAIL_INDEX() (CurveTailTail % CurveTaiLength)
-#define CURVE_TAIL_POINT_AT(index) ((CurveTailTail+index) % CurveTaiLength)
-#define NEXT_CURVE_TAIL_INDEX()\
-CurveTailTail++
-#endif
-
         // terminate if we hit the limit of being able to differentiate distances
         // if two solutions are within 1mm of each other we are not going to make meaningful progress
         for (;;)
         {
             ZeroAngle = MinAngle + (MaxAngle - MinAngle) / 2.0f;
             Solver.Reset(*this);
-            
-#if CALCULATE_ACCURATE_IMPACT_POINT
-             const auto store_last_q = [&]
-                 {
-                    CurveTail[CURVE_TAIL_INDEX()].first = Solver.Q.DistanceX;
-                    CurveTail[CURVE_TAIL_INDEX()].second = Solver.Q.DistanceY;
-                    NEXT_CURVE_TAIL_INDEX();
-                 };
-#define UPDATE_CURVE() store_last_q()
-#else
-#define UPDATE_CURVE()
-#endif
 
             while (!Solver.Completed()
                 &&
                 Solver.Q.DistanceX < ZeroDistance-ToleranceM)
             {
-                UPDATE_CURVE()
                 Solver.Advance();
             }
 
@@ -194,53 +169,10 @@ CurveTailTail++
                 Solver.Q.DistanceX <= ZeroDistance + ToleranceM
                 )
             {
-                // done, reset to original height
+                // done, reset to the original height
                 Height = PrevHeight;
                 break;
             }
-            
-#if CALCULATE_ACCURATE_IMPACT_POINT
-            // vertically close, but outside the box horisontally
-            // interpolate height for better accuracy, add one more point to get the full set of 4
-            store_last_q();
-            Solver.Advance();
-            store_last_q();
-
-            Curves::CatmullRomSegment XSegment(
-                CurveTail[CURVE_TAIL_POINT_AT(0)].first,
-                CurveTail[CURVE_TAIL_POINT_AT(1)].first,
-                CurveTail[CURVE_TAIL_POINT_AT(2)].first,
-                CurveTail[CURVE_TAIL_POINT_AT(3)].first
-            );
-            Curves::CatmullRomSegment YSegment(
-                CurveTail[CURVE_TAIL_POINT_AT(0)].second,
-                CurveTail[CURVE_TAIL_POINT_AT(1)].second,
-                CurveTail[CURVE_TAIL_POINT_AT(2)].second,
-                CurveTail[CURVE_TAIL_POINT_AT(3)].second
-            );
-
-            float t = 0.0f;
-            float dt = SolverParams.TimeStep;
-            for (;;)
-            {
-                const float X = XSegment(t);
-                if (X > ZeroDistance+ToleranceM)
-                {
-                    t -= dt;
-                    dt /= 2.0f;
-                }
-                else if ( X > ZeroDistance-ToleranceM)
-                {
-                    break;
-                }
-                t += dt;
-            }
-
-            if (fabsf(YSegment(t)) < ToleranceM)
-            {
-
-            }
-#endif
             Height = PrevHeight;
             break;
         }
