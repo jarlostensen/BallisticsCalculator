@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include "Algebra.h"
 
 namespace Renderer
 {
@@ -11,55 +12,6 @@ namespace Renderer
 
 namespace Plotter
 {
-    /**
-     * @struct Point2D
-     * @brief Represents a 2D point in Cartesian coordinates.
-     *
-     * This structure defines a point in a 2D space using two float values: `x` and `y`.
-     * It provides basic operations for point arithmetic, such as addition and subtraction.
-     *
-     * The default constructor initializes the point to `(0, 0)`. It also allows construction
-     * from two float values. Arithmetic and compound assignment operators are provided to
-     * facilitate computation involving 2D points.
-     */
-    struct Point2D
-    {
-        float x;
-        float y;
-
-        constexpr Point2D() = default;
-        constexpr Point2D(float x, float y) : x(x), y(y) {}
-
-        Point2D& operator+=(const Point2D& rhs)
-        {
-            x += rhs.x;
-            y += rhs.y;
-            return *this;
-        }
-
-        Point2D operator-=(const Point2D& rhs)
-        {
-            x -= rhs.x;
-            y -= rhs.y;
-            return *this;
-        }
-        
-        friend Point2D operator+(const Point2D& lhs, const Point2D& rhs)
-        {
-            return {lhs.x + rhs.x, lhs.y + rhs.y};
-        }
-
-        friend Point2D operator-(const Point2D& lhs, const Point2D& rhs)
-        {
-            return {lhs.x - rhs.x, lhs.y - rhs.y};
-        }
-
-        float VectorLengthSq() const
-        {
-            return (x*x) + (y*y);
-        }
-    };
-
     /**
      * @struct Range2D
      * @brief Represents a 2D range defined by minimum and maximum points.
@@ -70,70 +22,70 @@ namespace Plotter
      */
     struct Range2D
     {
-        Point2D Min;
-        Point2D Max;
+        Algebra::Vector2D Min;
+        Algebra::Vector2D Max;
 
         constexpr Range2D() = default;
-        constexpr Range2D(Point2D min, Point2D max) : Min(min), Max(max) {}
+        constexpr Range2D(Algebra::Vector2D min, Algebra::Vector2D max) : Min(min), Max(max) {}
         
         void Update(float x, float y)
         {
-            Min.x = std::min(Min.x, x);
-            Min.y = std::min(Min.y, y);
-            Max.x = std::max(Max.x, x);
-            Max.y = std::max(Max.y, y);
+            Min.SetX(std::min(Min.GetX(), x));
+            Min.SetY(std::min(Min.GetY(), y));
+            Max.SetX(std::max(Max.GetX(), x));
+            Max.SetY(std::max(Max.GetY(), y));
         }
 
         bool IsNonEmpty() const
         {
-            return Min.x < Max.x && Min.y < Max.y;
+            return Min.GetX() < Max.GetX() && Min.GetY() < Max.GetY();
         }
 
         bool IsEmpty() const
         {
-            return Min.x > Max.x || Min.y > Max.y;
+            return Min.GetX() > Max.GetX() || Min.GetY() > Max.GetY();
         }
 
         Range2D& operator&=(const Range2D& rhs)
         {
-            Min.x = std::max(Min.x, rhs.Min.x);
-            Min.y = std::max(Min.y, rhs.Min.y);
-            Max.x = std::min(Max.x, rhs.Max.x);
-            Max.y = std::min(Max.y, rhs.Max.y);
+            Min.SetX(std::max(Min.GetX(), rhs.Min.GetX()));
+            Min.SetY(std::max(Min.GetY(), rhs.Min.GetY()));
+            Max.SetX(std::min(Max.GetX(), rhs.Max.GetX()));
+            Max.SetY(std::min(Max.GetY(), rhs.Max.GetY()));
             return *this;
         }
 
         Range2D& operator|=(const Range2D& rhs)
         {
-            Min.x = std::min(Min.x, rhs.Min.x);
-            Min.y = std::min(Min.y, rhs.Min.y);
-            Max.x = std::max(Max.x, rhs.Max.x);
-            Max.y = std::max(Max.y, rhs.Max.y);
+            Min.SetX(std::min(Min.GetX(), rhs.Min.GetX()));
+            Min.SetY(std::min(Min.GetY(), rhs.Min.GetY()));
+            Max.SetX(std::max(Max.GetX(), rhs.Max.GetX()));
+            Max.SetY(std::max(Max.GetY(), rhs.Max.GetY()));
             return *this;
         }
 
-        Range2D& operator|=(const Point2D& rhs)
+        Range2D& operator|=(const Algebra::Vector2D& rhs)
         {
-            Min.x = std::min(Min.x, rhs.x);
-            Min.y = std::min(Min.y, rhs.y);
-            Max.x = std::max(Max.x, rhs.x);
-            Max.y = std::max(Max.y, rhs.y);
+            Min.SetX(std::min(Min.GetX(), rhs.GetX()));
+            Min.SetY(std::min(Min.GetY(), rhs.GetY()));
+            Max.SetX(std::max(Max.GetX(), rhs.GetX()));
+            Max.SetY(std::max(Max.GetY(), rhs.GetY()));
             return *this;
         }
         
         float Width() const
         {
-            return Max.x - Min.x;
+            return Max.GetX() - Min.GetX();
         }
 
         float Height() const
         {
-            return Max.y - Min.y;
+            return Max.GetY() - Min.GetY();
         }
 
-        bool IsPointInside(const Point2D& Point) const
+        bool IsPointInside(const Algebra::Vector2D& Point) const
         {
-            return Point.x >= Min.x && Point.y >= Min.y && Point.x < Max.x && Point.y < Max.y;
+            return Point.GetX() >= Min.GetX() && Point.GetY() >= Min.GetY() && Point.GetX() < Max.GetX() && Point.GetY() < Max.GetY();
         }
     };
     constexpr Range2D EmptyRange2D = {{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()}, {std::numeric_limits<float>::min(), std::numeric_limits<float>::min()}};
@@ -173,7 +125,7 @@ namespace Plotter
     struct Label2D
     {
         std::string String;
-        Point2D Position;    
+        Algebra::Vector2D Position;    
     };
 
     /**
@@ -182,8 +134,8 @@ namespace Plotter
      */
     struct Line2D
     {
-        Point2D Start;
-        Point2D End;   
+        Algebra::Vector2D Start;
+        Algebra::Vector2D End;   
     };
 
     /**
@@ -197,7 +149,7 @@ namespace Plotter
      */
     struct Curve2D
     {
-        std::vector<Point2D> Points;
+        std::vector<Algebra::Vector2D> Points;
         Range2D Extents;
         ColorRGB Color;
 
@@ -261,12 +213,12 @@ namespace Plotter
             Extents |= Curve.Extents;
         }
 
-        void AddLabel(const std::string& String, const Point2D& Position, ColorRGB Color=Black)
+        void AddLabel(const std::string& String, const Algebra::Vector2D& Position, ColorRGB Color=Black)
         {
             Labels.push_back({{String, Position},Color});
         }
 
-        void AddLine(const Point2D& Start, const Point2D& End, ColorRGB Color=Black)
+        void AddLine(const Algebra::Vector2D& Start, const Algebra::Vector2D& End, ColorRGB Color=Black)
         {
             Lines.push_back({{Start, End},Color});
         }
@@ -299,7 +251,7 @@ namespace Plotter
     {
         virtual ~IRenderer() = default;
         virtual void DrawLine(float x0, float y0, float x1, float y1, ColorRGB Color) = 0;
-        virtual void DrawText(const std::string& Text, const Point2D& Position, ColorRGB Color) = 0;
+        virtual void DrawText(const std::string& Text, const Algebra::Vector2D& Position, ColorRGB Color) = 0;
         virtual Range2D GetViewportExtents() = 0;
     };
     using RendererPtr = std::shared_ptr<IRenderer>;
@@ -309,13 +261,13 @@ namespace Plotter
     void ClearPlots();
     void DrawPlot(PlotPtr InPlot, const Range2D& ViewportWindow = EmptyRange2D);
     void DrawLine(const Line2D& Line,ColorRGB Color=Black);
-    void DrawText(const std::string& Text, const Point2D& Position, ColorRGB Color=Black);
+    void DrawText(const std::string& Text, const Algebra::Vector2D& Position, ColorRGB Color=Black);
 
     void BeginFrame();
     void RenderFrame();
     void EndFrame();
     
     Range2D GetPlotRange();
-    PlotPtr ViewportPointInPlot(const Point2D& ViewportPosition);
+    PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition);
     
 }

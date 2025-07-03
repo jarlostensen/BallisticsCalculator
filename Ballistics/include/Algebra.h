@@ -13,6 +13,20 @@ namespace Algebra
 
         float GetX() const { return X; }
         float GetY() const { return Y; }
+        void SetX(float InX) { X = InX; }
+        void SetY(float InY) { Y = InY; }
+        void Set(float InX, float InY) { X = InX; Y = InY; }
+        Vector2D& Normalize()
+        {
+            float Length = this->LengthSq();
+            if (Length > 0.0f)
+            {
+                float InvLength = 1.0f / sqrtf(Length);
+                X *= InvLength;
+                Y *= InvLength;
+            }
+            return *this;
+        }
         
         Vector2D& operator+=(const Vector2D& InPoint)
         {
@@ -43,6 +57,11 @@ namespace Algebra
         Vector2D operator*(float InScalar) const
         {
             return {X * InScalar, Y * InScalar};
+        }
+
+        bool operator==(const Vector2D& Rhs) const
+        {
+            return X == Rhs.X && Y == Rhs.Y;
         }
 
         friend Vector2D operator*(float InScalar, const Vector2D& InPoint)

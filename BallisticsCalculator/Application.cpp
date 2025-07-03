@@ -12,7 +12,7 @@ namespace
     SDL_Window* SdlWindow = NULL;
     SDL_Renderer* SdlRenderer = NULL;
     TTF_Font* SdlFont = nullptr;
-    Range2D ViewportExtents = {Point2D(0.0f,0.0f), Point2D(1200.0f,900.0f)};
+    Range2D ViewportExtents = {Algebra::Vector2D(0.0f,0.0f), Algebra::Vector2D(1200.0f,900.0f)};
 
     SDL_Texture* RenderText(const std::string &text, SDL_Color color) {
         SDL_Surface* textSurface = TTF_RenderText_Blended(SdlFont, text.data(), text.length(), color);
@@ -26,14 +26,14 @@ namespace
         SdlRendererImpl() =  default;
         ~SdlRendererImpl() override = default;
         
-        void DrawText(const std::string& Text, const Plotter::Point2D& Position, ColorRGB Color) override
+        void DrawText(const std::string& Text, const Algebra::Vector2D& Position, ColorRGB Color) override
         {
             SDL_Color TextColor = {Color.R, Color.G, Color.B, 255};
             if ( SDL_Texture* TextTexture = RenderText(Text, TextColor) )
             {
                 float textWidth, textHeight;
                 SDL_GetTextureSize(TextTexture, &textWidth, &textHeight);
-                SDL_FRect destRect = {Position.x, Position.y, textWidth, textHeight};
+                SDL_FRect destRect = {Position.GetX(), Position.GetY(), textWidth, textHeight};
                 SDL_RenderTexture(SdlRenderer, TextTexture, nullptr, &destRect);
                 SDL_DestroyTexture(TextTexture);
             }
@@ -78,8 +78,8 @@ namespace
         int ViewportWidth;
         int ViewportHeight;
         SDL_GetRenderOutputSize(SdlRenderer, &ViewportWidth, &ViewportHeight);
-        ViewportExtents.Max.x = static_cast<float>(ViewportWidth);
-        ViewportExtents.Max.y = static_cast<float>(ViewportHeight);
+        ViewportExtents.Max.SetX( static_cast<float>(ViewportWidth) );
+        ViewportExtents.Max.SetY( static_cast<float>(ViewportHeight) );
         AppInit();
 
         return SDL_APP_CONTINUE;
@@ -98,8 +98,8 @@ namespace
                 int ViewportWidth;
                 int ViewportHeight;
                 SDL_GetRenderOutputSize(SdlRenderer, &ViewportWidth, &ViewportHeight);
-                ViewportExtents.Max.x = static_cast<float>(ViewportWidth);
-                ViewportExtents.Max.y = static_cast<float>(ViewportHeight);
+                ViewportExtents.Max.SetX( static_cast<float>(ViewportWidth) );
+                ViewportExtents.Max.SetY( static_cast<float>(ViewportHeight) );
             }
             break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -110,11 +110,10 @@ namespace
             }
             break;
         default:;
+        }
         return SDL_APP_CONTINUE;
     }
-
 }
-
 
 using namespace Renderer;
 
@@ -151,3 +150,4 @@ SDL_AppResult SDL_AppIterate(void* /*appstate*/)
 void SDL_AppQuit(void* /*appstate*/, SDL_AppResult /*result*/)
 {
 }
+    

@@ -22,46 +22,46 @@ namespace Plotter
 
     struct ViewportTransform
     {
-        Point2D Scale;
-        Point2D Translation;
+        Algebra::Vector2D Scale;
+        Algebra::Vector2D Translation;
     };
     
     Range2D MaximalDataRange = EmptyRange2D;
 
     void GenerateTransform(const Range2D& Extents, const Range2D& InViewportExtents, ViewportTransform& OutViewportTransform)
     {
-        OutViewportTransform.Scale.x = (InViewportExtents.Max.x - InViewportExtents.Min.x) / ( Extents.Max.x -  Extents.Min.x);
-        OutViewportTransform.Scale.y = (InViewportExtents.Max.y - InViewportExtents.Min.y) / ( Extents.Max.y -  Extents.Min.y);
-        OutViewportTransform.Translation.x = ( Extents.Max.x * InViewportExtents.Min.x -  Extents.Min.x * InViewportExtents.Max.x) / ( Extents.Max.x -  Extents.Min.x);
-        OutViewportTransform.Translation.y = ( Extents.Max.y * InViewportExtents.Min.y -  Extents.Min.y * InViewportExtents.Max.y) / ( Extents.Max.y -  Extents.Min.y);
+        OutViewportTransform.Scale.SetX( (InViewportExtents.Max.GetX() - InViewportExtents.Min.GetX()) / ( Extents.Max.GetX() -  Extents.Min.GetX()) );
+        OutViewportTransform.Scale.SetY( (InViewportExtents.Max.GetY() - InViewportExtents.Min.GetY()) / ( Extents.Max.GetY() -  Extents.Min.GetY()) );
+        OutViewportTransform.Translation.SetX( ( Extents.Max.GetX() * InViewportExtents.Min.GetX() -  Extents.Min.GetX() * InViewportExtents.Max.GetX()) / ( Extents.Max.GetX() -  Extents.Min.GetX()) );
+        OutViewportTransform.Translation.SetY( ( Extents.Max.GetY() * InViewportExtents.Min.GetY() -  Extents.Min.GetY() * InViewportExtents.Max.GetY()) / ( Extents.Max.GetY() -  Extents.Min.GetY()) );
     }
 
-    void ToViewport(const ViewportTransform& Transform, const Range2D& ViewportExtents, const std::vector<Point2D>& Points, std::vector<Point2D>& OutPoints)
+    void ToViewport(const ViewportTransform& Transform, const Range2D& ViewportExtents, const std::vector<Algebra::Vector2D>& Points, std::vector<Algebra::Vector2D>& OutPoints)
     {
         OutPoints.resize(Points.size());
         for (size_t n = 0; n < Points.size(); ++n)
         {
-            OutPoints[n].x = Points[n].x * Transform.Scale.x + Transform.Translation.x;
-            OutPoints[n].y = ViewportExtents.Min.y + (ViewportExtents.Max.y - (Points[n].y * Transform.Scale.y + Transform.Translation.y));
+            OutPoints[n].SetX( Points[n].GetX() * Transform.Scale.GetX() + Transform.Translation.GetX() );
+            OutPoints[n].SetY( ViewportExtents.Min.GetY() + (ViewportExtents.Max.GetY() - (Points[n].GetY() * Transform.Scale.GetY() + Transform.Translation.GetY())) );
         }
     }
 
     void ToViewport(const ViewportTransform& Transform, const Range2D& ViewportExtents, const Line2D& Line, Line2D& OutLine)
     {
-        OutLine.Start = {Line.Start.x * Transform.Scale.x + Transform.Translation.x, ViewportExtents.Min.y + (ViewportExtents.Max.y -  (Line.Start.y * Transform.Scale.y + Transform.Translation.y))};
-        OutLine.End  = {Line.End.x * Transform.Scale.x + Transform.Translation.x, ViewportExtents.Min.y + (ViewportExtents.Max.y - (Line.End.y * Transform.Scale.y + Transform.Translation.y))};    
+        OutLine.Start = {Line.Start.GetX() * Transform.Scale.GetX() + Transform.Translation.GetX(), ViewportExtents.Min.GetY() + (ViewportExtents.Max.GetY() -  (Line.Start.GetY() * Transform.Scale.GetY() + Transform.Translation.GetY()))};
+        OutLine.End  = {Line.End.GetX() * Transform.Scale.GetX() + Transform.Translation.GetX(), ViewportExtents.Min.GetY() + (ViewportExtents.Max.GetY() - (Line.End.GetY() * Transform.Scale.GetY() + Transform.Translation.GetY()))};    
     }
 
-    void ToViewport(const ViewportTransform& Transform, const Range2D& ViewportExtents, const Point2D& Point, Point2D& OutPoint)
+    void ToViewport(const ViewportTransform& Transform, const Range2D& ViewportExtents, const Algebra::Vector2D& Point, Algebra::Vector2D& OutPoint)
     {
-        OutPoint.x = Point.x * Transform.Scale.x + Transform.Translation.x;
-        OutPoint.y = ViewportExtents.Min.y + (ViewportExtents.Max.y - (Point.y * Transform.Scale.y + Transform.Translation.y));    
+        OutPoint.SetX( Point.GetX() * Transform.Scale.GetX() + Transform.Translation.GetX() );
+        OutPoint.SetY( ViewportExtents.Min.GetY() + (ViewportExtents.Max.GetY() - (Point.GetY() * Transform.Scale.GetY() + Transform.Translation.GetY())) );    
     }
 
-    void FromViewport(const ViewportTransform& Transform, const Range2D& ViewportExtents, const Point2D& Point, Point2D& OutPoint)
+    void FromViewport(const ViewportTransform& Transform, const Range2D& ViewportExtents, const Algebra::Vector2D& Point, Algebra::Vector2D& OutPoint)
     {
-        OutPoint.x = (Point.x - Transform.Translation.x) / Transform.Scale.x;
-        OutPoint.y = ((Point.y - ViewportExtents.Min.y - ViewportExtents.Max.y) - Transform.Translation.y)/Transform.Scale.y; 
+        OutPoint.SetX( (Point.GetX() - Transform.Translation.GetX()) / Transform.Scale.GetX() );
+        OutPoint.SetY( ((Point.GetY() - ViewportExtents.Min.GetY() - ViewportExtents.Max.GetY()) - Transform.Translation.GetY())/Transform.Scale.GetY() ); 
     }
     
     void DrawPlot(PlotPtr InPlot, const Range2D& ViewportWindow)
@@ -74,7 +74,7 @@ namespace Plotter
         LineBuffer.push_back({Line,Color});
     }
 
-    void DrawText(const std::string& Text, const Point2D& Position, ColorRGB Color)
+    void DrawText(const std::string& Text, const Algebra::Vector2D& Position, ColorRGB Color)
     {
         TextBuffer.push_back({{Text, Position},Color});
     }
@@ -100,12 +100,12 @@ namespace Plotter
         return MaximalDataRange;   
     }
 
-    PlotPtr ViewportPointInPlot(const Point2D& ViewportPosition)
+    PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition)
     {
         ViewportTransform Transform;
         Range2D ViewportWindowExtents = RendererImpl->GetViewportExtents();
         GenerateTransform(GetPlotRange(), ViewportWindowExtents, Transform);
-        Point2D Position;
+        Algebra::Vector2D Position;
         FromViewport(Transform, ViewportWindowExtents, ViewportPosition, Position);
         for (const auto & Plot : PlotBuffer)
         {
@@ -175,21 +175,21 @@ namespace Renderer
                 GenerateTransform(Plot.first->GetExtents(), ViewportWindowExtents, Transform);
                 for (const auto & Curve : Plot.first->Curves)
                 {
-                    std::vector<Point2D> TransformedPoints;
+                    std::vector<Algebra::Vector2D> TransformedPoints;
                     ToViewport(Transform, ViewportWindowExtents, Curve.Points, TransformedPoints);
-                    Point2D& PrevPoint = TransformedPoints[0];
+                    Algebra::Vector2D& PrevPoint = TransformedPoints[0];
                     for (size_t n = 1; n < TransformedPoints.size(); ++n)
                     {
                         RendererImpl->DrawLine(
-                                       PrevPoint.x,
-                                       PrevPoint.y,
-                                       TransformedPoints[n].x,
-                                       TransformedPoints[n].y,
+                                       PrevPoint.GetX(),
+                                       PrevPoint.GetY(),
+                                       TransformedPoints[n].GetX(),
+                                       TransformedPoints[n].GetY(),
                                        Curve.Color);
-                        RenderFilledCircle(TransformedPoints[n].x, TransformedPoints[n].y, 2.0f, Curve.Color);
+                        RenderFilledCircle(TransformedPoints[n].GetX(), TransformedPoints[n].GetY(), 2.0f, Curve.Color);
                         PrevPoint = TransformedPoints[n];
                     }
-                    RenderFilledCircle(PrevPoint.x, PrevPoint.y, 2.0f, Curve.Color);
+                    RenderFilledCircle(PrevPoint.GetX(), PrevPoint.GetY(), 2.0f, Curve.Color);
                 }
                 
                 for (const auto & Line : Plot.first->Lines)
@@ -197,16 +197,16 @@ namespace Renderer
                     Line2D TransformedLine;
                     ToViewport(Transform, ViewportWindowExtents, Line.first, TransformedLine);
                     RendererImpl->DrawLine(
-                        TransformedLine.Start.x,
-                        TransformedLine.Start.y,
-                        TransformedLine.End.x,
-                        TransformedLine.End.y,
+                        TransformedLine.Start.GetX(),
+                        TransformedLine.Start.GetY(),
+                        TransformedLine.End.GetX(),
+                        TransformedLine.End.GetY(),
                         Line.second);
                 }
 
                 for (const auto & Label : Plot.first->Labels)
                 {
-                    Point2D TransformedLabelPosition;
+                    Algebra::Vector2D TransformedLabelPosition;
                     ToViewport(Transform,ViewportWindowExtents, Label.first.Position, TransformedLabelPosition);
                     RendererImpl->DrawText(Label.first.String, TransformedLabelPosition, Label.second);
                 }
@@ -236,7 +236,7 @@ namespace Plotter
 
         for (const auto & Line : LineBuffer)
         {
-            RendererImpl->DrawLine(Line.first.Start.x, Line.first.Start.y, Line.first.End.x, Line.first.End.y, Line.second);
+            RendererImpl->DrawLine(Line.first.Start.GetX(), Line.first.Start.GetY(), Line.first.End.GetX(), Line.first.End.GetY(), Line.second);
         }
 
         for (const auto & Text : TextBuffer)
