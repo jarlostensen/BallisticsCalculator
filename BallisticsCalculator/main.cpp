@@ -6,7 +6,6 @@
 #include "Application.h"
 
 #include "Ballistics.h"
-#include "Curves.h"
 
 using namespace Plotter;
 namespace
