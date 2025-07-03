@@ -9,7 +9,7 @@ namespace Renderer
     class PlotRenderer;
 }
 
-namespace Ui
+namespace Plotter
 {
     /**
      * @struct Point2D
@@ -52,6 +52,11 @@ namespace Ui
         friend Point2D operator-(const Point2D& lhs, const Point2D& rhs)
         {
             return {lhs.x - rhs.x, lhs.y - rhs.y};
+        }
+
+        float VectorLengthSq() const
+        {
+            return (x*x) + (y*y);
         }
     };
 
@@ -124,6 +129,11 @@ namespace Ui
         float Height() const
         {
             return Max.y - Min.y;
+        }
+
+        bool IsPointInside(const Point2D& Point) const
+        {
+            return Point.x >= Min.x && Point.y >= Min.y && Point.x < Max.x && Point.y < Max.y;
         }
     };
     constexpr Range2D EmptyRange2D = {{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()}, {std::numeric_limits<float>::min(), std::numeric_limits<float>::min()}};
@@ -283,7 +293,7 @@ namespace Ui
      * The following functionalities are included in the interface:
      * - Rendering 2D lines with specified coordinates and color.
      * - Rendering textual elements at a given position with a specific color.
-     * - Retrieving the extents of the current rendering viewport.
+     * - Retrieving the extent of the current rendering viewport.
      */
     struct IRenderer
     {
@@ -306,5 +316,6 @@ namespace Ui
     void EndFrame();
     
     Range2D GetPlotRange();
+    PlotPtr ViewportPointInPlot(const Point2D& ViewportPosition);
     
 }

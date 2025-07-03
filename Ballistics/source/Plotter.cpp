@@ -1,13 +1,13 @@
-﻿#include "Ui.h"
+﻿#include "Plotter.h"
 
 #include <cassert>
 
 namespace 
 {
-    Ui::RendererPtr RendererImpl;
+    Plotter::RendererPtr RendererImpl;
 }
 
-namespace Ui
+namespace Plotter
 {
     using LineBufferType = std::vector<std::pair<Line2D, ColorRGB>>;
     using CurveBufferType = std::vector<Curve2D>;
@@ -55,6 +55,12 @@ namespace Ui
         OutPoint.x = Point.x * Transform.Scale.x + Transform.Translation.x;
         OutPoint.y = ViewportExtents.Min.y + (ViewportExtents.Max.y - (Point.y * Transform.Scale.y + Transform.Translation.y));    
     }
+
+    void FromViewport(const ViewportTransform& Transform, const Range2D& ViewportExtents, const Point2D& Point, Point2D& OutPoint)
+    {
+        OutPoint.x = (Point.x - Transform.Translation.x) / Transform.Scale.x;
+        OutPoint.y = ((Point.y - ViewportExtents.Min.y - ViewportExtents.Max.y) - Transform.Translation.y)/Transform.Scale.y; 
+    }
     
     void DrawPlot(PlotPtr InPlot, const Range2D& ViewportWindow)
     {
@@ -91,9 +97,26 @@ namespace Ui
     {
         return MaximalDataRange;   
     }
+
+    PlotPtr ViewportPointInPlot(const Point2D& ViewportPosition)
+    {
+        ViewportTransform Transform;
+        Range2D ViewportWindowExtents = RendererImpl->GetViewportExtents();
+        GenerateTransform(GetPlotRange(), ViewportWindowExtents, Transform);
+        Point2D Position;
+        FromViewport(Transform, ViewportWindowExtents, ViewportPosition, Position);
+        for (const auto & Plot : PlotBuffer)
+        {
+            if ( Plot.first->GetExtents().IsPointInside(Position) )
+            {
+                return Plot.first;
+            }
+        }
+        return {};
+    }
 }
 
-using namespace Ui;
+using namespace Plotter;
 namespace Renderer
 {
     static void RenderFilledCircle(float centerX, float centerY, float radius, ColorRGB color)
@@ -190,7 +213,7 @@ namespace Renderer
     };
 }
 
-namespace Ui
+namespace Plotter
 {
     bool bInFrame = false;
     

@@ -6,7 +6,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
-using namespace Ui;
+using namespace Plotter;
 namespace
 {
     SDL_Window* SdlWindow = NULL;
@@ -21,12 +21,12 @@ namespace
         return textTexture;
     }
 
-    struct SdlRendererImpl : Ui::IRenderer
+    struct SdlRendererImpl : Plotter::IRenderer
     {
         SdlRendererImpl() =  default;
         ~SdlRendererImpl() override = default;
         
-        void DrawText(const std::string& Text, const Ui::Point2D& Position, ColorRGB Color) override
+        void DrawText(const std::string& Text, const Plotter::Point2D& Position, ColorRGB Color) override
         {
             SDL_Color TextColor = {Color.R, Color.G, Color.B, 255};
             if ( SDL_Texture* TextTexture = RenderText(Text, TextColor) )
@@ -91,14 +91,25 @@ namespace
         event->type == SDL_EVENT_QUIT) {
             return SDL_APP_SUCCESS;
         }
-        if (event->type == SDL_EVENT_WINDOW_RESIZED)
+        switch (event->type)
         {
-            int ViewportWidth;
-            int ViewportHeight;
-            SDL_GetRenderOutputSize(SdlRenderer, &ViewportWidth, &ViewportHeight);
-            ViewportExtents.Max.x = static_cast<float>(ViewportWidth);
-            ViewportExtents.Max.y = static_cast<float>(ViewportHeight);
-        }
+        case  SDL_EVENT_WINDOW_RESIZED:
+            {
+                int ViewportWidth;
+                int ViewportHeight;
+                SDL_GetRenderOutputSize(SdlRenderer, &ViewportWidth, &ViewportHeight);
+                ViewportExtents.Max.x = static_cast<float>(ViewportWidth);
+                ViewportExtents.Max.y = static_cast<float>(ViewportHeight);
+            }
+            break;
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
+        case SDL_EVENT_MOUSE_MOTION:
+            {
+                //
+            }
+            break;
+        default:;
         return SDL_APP_CONTINUE;
     }
 

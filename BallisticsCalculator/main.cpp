@@ -8,7 +8,7 @@
 #include "Ballistics.h"
 #include "Curves.h"
 
-using namespace Ui;
+using namespace Plotter;
 namespace
 {
     Ballistics::BulletData BulletData;
@@ -102,6 +102,25 @@ namespace
         
         Ballistics::SolveTrajectoryG7(TrajectoryDataPoints, FiringData, Environment, Solver);
     }
+
+    const Ballistics::TrajectoryDataPoint& NearestPoint(const Point2D& SamplePoint)
+    {
+        float MinDistance = std::numeric_limits<float>::max();
+        size_t MinIndex = 0;
+        for (size_t nQ = 1; nQ < TrajectoryDataPoints.size(); ++nQ)
+        {
+            const float DeltaX = TrajectoryDataPoints[nQ].DistanceX - SamplePoint.x;
+            const float DeltaY = TrajectoryDataPoints[nQ].DistanceY - SamplePoint.y;
+            const float DeltaSq = (DeltaX * DeltaX) + (DeltaY * DeltaY);
+            if (DeltaSq < MinDistance)
+            {
+                MinDistance = DeltaSq;
+                MinIndex = nQ;
+            }
+        }
+        return TrajectoryDataPoints[MinIndex];
+    }
+    
 }
 
 #ifdef WITH_SDL
