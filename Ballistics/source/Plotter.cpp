@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+#include "Curves.h"
+
 namespace 
 {
     Plotter::RendererPtr RendererImpl;
