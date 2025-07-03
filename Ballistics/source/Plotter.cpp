@@ -177,19 +177,33 @@ namespace Renderer
                 {
                     std::vector<Algebra::Vector2D> TransformedPoints;
                     ToViewport(Transform, ViewportWindowExtents, Curve.Points, TransformedPoints);
-                    Algebra::Vector2D& PrevPoint = TransformedPoints[0];
-                    for (size_t n = 1; n < TransformedPoints.size(); ++n)
+
+                    RendererImpl->DrawLine(
+                                           TransformedPoints[0].GetX(),
+                                           TransformedPoints[0].GetY(),
+                                           TransformedPoints[1].GetX(),
+                                           TransformedPoints[1].GetY(),
+                                           Curve.Color);
+                    RenderFilledCircle(TransformedPoints[0].GetX(), TransformedPoints[0].GetY(), 2.0f, Curve.Color);
+                    RenderFilledCircle(TransformedPoints[1].GetX(), TransformedPoints[1].GetY(), 2.0f, Curve.Color);
+                    
+                    std::vector<Algebra::Vector2D> SampledPoints;
+                    for (size_t n = 1; n < TransformedPoints.size()-2; ++n)
                     {
-                        RendererImpl->DrawLine(
-                                       PrevPoint.GetX(),
-                                       PrevPoint.GetY(),
-                                       TransformedPoints[n].GetX(),
-                                       TransformedPoints[n].GetY(),
-                                       Curve.Color);
-                        RenderFilledCircle(TransformedPoints[n].GetX(), TransformedPoints[n].GetY(), 2.0f, Curve.Color);
-                        PrevPoint = TransformedPoints[n];
+                        Curves::CatmullRomSegment2D SampleCurve(TransformedPoints[n-1], TransformedPoints[n], TransformedPoints[n+1], TransformedPoints[n+2]);
+                        SampleCurve.SampleAdaptively(SampledPoints, 0.0f, 1.0f, 0.10f);
+                        for (size_t nQ = 0; nQ < SampledPoints.size(); nQ+=2)
+                        {
+                            RendererImpl->DrawLine(
+                                           SampledPoints[nQ+0].GetX(),
+                                           SampledPoints[nQ+0].GetY(),
+                                           SampledPoints[nQ+1].GetX(),
+                                           SampledPoints[nQ+1].GetY(),
+                                           Curve.Color);
+                            RenderFilledCircle(SampledPoints[nQ+1].GetX(), SampledPoints[nQ+1].GetY(), 2.0f, Curve.Color);
+                        }
+                        SampledPoints.clear();
                     }
-                    RenderFilledCircle(PrevPoint.GetX(), PrevPoint.GetY(), 2.0f, Curve.Color);
                 }
                 
                 for (const auto & Line : Plot.first->Lines)

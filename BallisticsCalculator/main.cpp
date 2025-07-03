@@ -70,7 +70,7 @@ namespace
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();
         ViewportExtents.Min.SetX( ViewportExtents.Min.GetX() + ViewportExtents.Width()*0.1f);
         ViewportExtents.Min.SetY( ViewportExtents.Min.GetY() + ViewportExtents.Height()*0.15f);
-        ViewportExtents.Max.SetX( ViewportExtents.Max.GetX() + ViewportExtents.Width()*0.1f);
+        ViewportExtents.Max.SetX( ViewportExtents.Max.GetX() - ViewportExtents.Width()*0.1f);
         ViewportExtents.Max.SetY( ViewportExtents.Max.GetY() - ViewportExtents.Height()*0.15f);
         DrawPlot(TrajectoryPlot, ViewportExtents);
     }

@@ -9,8 +9,7 @@ namespace Algebra
     public:
         Vector2D() = default;
         constexpr Vector2D(float InX, float InY) : X(InX), Y(InY) {}
-        Vector2D(const Vector2D& InPoint) = default;
-
+        
         float GetX() const { return X; }
         float GetY() const { return Y; }
         void SetX(float InX) { X = InX; }
