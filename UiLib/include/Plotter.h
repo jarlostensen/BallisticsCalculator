@@ -143,9 +143,7 @@ namespace Plotter
      * @struct Curve2D
      * @brief Represents a 2D curve defined by a collection of points, color, and its extents.
      *
-     * This structure provides a mechanism for defining and managing a 2D curve. It consists of a set of
-     * points in 2D space, the bounding box (extents) of the curve, and its display color. The curve can
-     * be dynamically updated by adding more points, with the extents being adjusted automatically.
+     * This structure provides a mechanism for defining and managing a 2D curve with meta data attached to each point
      *
      */
     struct Curve2D

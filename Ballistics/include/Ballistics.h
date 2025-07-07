@@ -88,11 +88,6 @@ namespace Ballistics
 	{
 		Algebra::Vector2D Velocity;
 		Algebra::Vector2D Position;
-
-		//float VelocityX;
-		//float VelocityY;
-		//float DistanceY;
-		//float DistanceX;
 		float T;
 
 		TrajectoryDataPoint() = default;
@@ -104,11 +99,6 @@ namespace Ballistics
 		TrajectoryDataPoint& Initialize(FiringData InFiringData)
 		{
 			T = 0.0f;
-			/*DistanceX = 0.0f;
-			DistanceY = InFiringData.Height;
-			VelocityX = InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle);
-			VelocityY = InFiringData.Bullet.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle);*/
-
 			Position.SetX(0.0f);
 			Position.SetY(InFiringData.Height);
 			Velocity.SetX(InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle));
