@@ -2,6 +2,7 @@
 #include "Application.h"
 #include <vector>
 #define SDL_MAIN_USE_CALLBACKS 1  /* use the callbacks instead of main() */
+#include <sstream>
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -28,14 +29,30 @@ namespace
         
         void DrawText(const std::string& Text, const Algebra::Vector2D& Position, ColorRGB Color) override
         {
+            std::istringstream stream(Text);
+            std::string ParsedLine;
+            std::vector<std::string> Lines;
+            while (std::getline(stream, ParsedLine)) {
+                Lines.push_back(ParsedLine);
+            }
+
             SDL_Color TextColor = {Color.R, Color.G, Color.B, 255};
-            if ( SDL_Texture* TextTexture = RenderText(Text, TextColor) )
+            float LineOffset = 0.0f;
+            for (const auto& Line : Lines)
             {
-                float textWidth, textHeight;
-                SDL_GetTextureSize(TextTexture, &textWidth, &textHeight);
-                SDL_FRect destRect = {Position.GetX(), Position.GetY(), textWidth, textHeight};
-                SDL_RenderTexture(SdlRenderer, TextTexture, nullptr, &destRect);
-                SDL_DestroyTexture(TextTexture);
+                if ( SDL_Surface* TextSurface = TTF_RenderText_Blended(SdlFont, Line.data(), Line.length(), TextColor) )
+                {
+                    if ( SDL_Texture* TextTexture = SDL_CreateTextureFromSurface(SdlRenderer, TextSurface) )
+                    {
+                        float TextWidth, TextHeight;
+                        SDL_GetTextureSize(TextTexture, &TextWidth, &TextHeight);
+                        SDL_FRect DestRect = {Position.GetX(), Position.GetY() + LineOffset, TextWidth, TextHeight};
+                        SDL_RenderTexture(SdlRenderer, TextTexture, nullptr, &DestRect);
+                        LineOffset += TextHeight;
+                        SDL_DestroyTexture(TextTexture);           
+                    }
+                    SDL_DestroySurface(TextSurface);
+                }
             }
         }
         

@@ -69,8 +69,13 @@ namespace
         
         if ( DataPointSelectionIndex>=0 )
         {
-            TrajectoryPlot->AddTransientLabel(std::format("{:.1f}m/s",TrajectoryDataPoints[DataPointSelectionIndex].VelocityX),
-                {TrajectoryDataPoints[DataPointSelectionIndex].DistanceX,TrajectoryDataPoints[DataPointSelectionIndex].DistanceY}, Red);
+            const float KineticEnergy = 0.5f * FiringData.Bullet.GetMassKg() * ((TrajectoryDataPoints[DataPointSelectionIndex].VelocityX * TrajectoryDataPoints[DataPointSelectionIndex].VelocityX) + (TrajectoryDataPoints[DataPointSelectionIndex].VelocityY * TrajectoryDataPoints[DataPointSelectionIndex].VelocityY));   
+            TrajectoryPlot->AddTransientLabel(std::format("x:{:.1f}m/s\ny:{:.1f}m/s\n{:.1f}J @ t:{:.01f}s",
+                TrajectoryDataPoints[DataPointSelectionIndex].VelocityX,
+                TrajectoryDataPoints[DataPointSelectionIndex].VelocityY,
+                KineticEnergy,
+                TrajectoryDataPoints[DataPointSelectionIndex].T),
+                {TrajectoryDataPoints[DataPointSelectionIndex].DistanceX,TrajectoryDataPoints[DataPointSelectionIndex].DistanceY}, DarkGray);
         }
 
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();
