@@ -69,7 +69,8 @@ namespace
         
         if ( DataPointSelectionIndex>=0 )
         {
-            DrawText(std::format("{:.1f}m/s",TrajectoryDataPoints[DataPointSelectionIndex].VelocityX), {10.0f, 55.0f});
+            TrajectoryPlot->AddTransientLabel(std::format("{:.1f}m/s",TrajectoryDataPoints[DataPointSelectionIndex].VelocityX),
+                {TrajectoryDataPoints[DataPointSelectionIndex].DistanceX,TrajectoryDataPoints[DataPointSelectionIndex].DistanceY}, Red);
         }
 
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();

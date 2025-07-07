@@ -210,6 +210,7 @@ namespace Plotter
     {
         std::vector<Curve2D> Curves;
         std::vector<std::pair<Label2D, ColorRGB>> Labels;
+        std::vector<std::pair<Label2D, ColorRGB>> TransientLabels;
         std::vector<std::pair<Line2D, ColorRGB>> Lines;
         Range2D Extents;
 
@@ -239,6 +240,11 @@ namespace Plotter
         void AddLabel(const std::string& String, const Algebra::Vector2D& Position, ColorRGB Color=Black)
         {
             Labels.push_back({{String, Position},Color});
+        }
+
+        void AddTransientLabel(const std::string& String, const Algebra::Vector2D& Position, ColorRGB Color=Black)
+        {
+            TransientLabels.push_back({{String, Position},Color});
         }
 
         void AddLine(const Algebra::Vector2D& Start, const Algebra::Vector2D& End, ColorRGB Color=Black)

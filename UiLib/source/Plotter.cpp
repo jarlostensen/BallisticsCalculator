@@ -232,6 +232,14 @@ namespace Renderer
                     ToViewport(Transform,ViewportWindowExtents, Label.first.Position, TransformedLabelPosition);
                     RendererImpl->DrawText(Label.first.String, TransformedLabelPosition, Label.second);
                 }
+
+                for (const auto & Label : Plot.first->TransientLabels)
+                {
+                    Algebra::Vector2D TransformedLabelPosition;
+                    ToViewport(Transform,ViewportWindowExtents, Label.first.Position, TransformedLabelPosition);
+                    RendererImpl->DrawText(Label.first.String, TransformedLabelPosition, Label.second);
+                }
+                Plot.first->TransientLabels.clear();
             }
         }
     };
