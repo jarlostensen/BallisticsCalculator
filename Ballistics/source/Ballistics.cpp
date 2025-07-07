@@ -129,9 +129,6 @@ namespace Ballistics
 	    ZeroAngle = MinAngle + (MaxAngle - MinAngle) / 2.0f;
 	    
 	    HybridEulerRk4Solver Solver(*this, Environment, SolverParams);
-
-        // terminate if we hit the limit of being able to differentiate distances
-        // if two solutions are within 1mm of each other we are not going to make meaningful progress
         for (;;)
         {
             ZeroAngle = MinAngle + (MaxAngle - MinAngle) / 2.0f;

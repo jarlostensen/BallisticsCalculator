@@ -61,12 +61,13 @@ namespace Plotter
     void FromViewport(const ViewportTransform& Transform, const Range2D& ViewportExtents, const Algebra::Vector2D& Point, Algebra::Vector2D& OutPoint)
     {
         OutPoint.SetX( (Point.GetX() - Transform.Translation.GetX()) / Transform.Scale.GetX() );
-        OutPoint.SetY( ((Point.GetY() - ViewportExtents.Min.GetY() - ViewportExtents.Max.GetY()) - Transform.Translation.GetY())/Transform.Scale.GetY() ); 
+        OutPoint.SetY( ((ViewportExtents.Min.GetY() + ViewportExtents.Max.GetY()) - Point.GetY() - Transform.Translation.GetY())/Transform.Scale.GetY() ); 
     }
     
     void DrawPlot(PlotPtr InPlot, const Range2D& ViewportWindow)
     {
         PlotBuffer.emplace_back(InPlot, ViewportWindow);
+        MaximalDataRange |= InPlot->GetExtents();
     }
 
     void DrawLine(const Line2D& Line, ColorRGB Color)
@@ -102,16 +103,23 @@ namespace Plotter
 
     PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition)
     {
-        ViewportTransform Transform;
-        Range2D ViewportWindowExtents = RendererImpl->GetViewportExtents();
-        GenerateTransform(GetPlotRange(), ViewportWindowExtents, Transform);
-        Algebra::Vector2D Position;
-        FromViewport(Transform, ViewportWindowExtents, ViewportPosition, Position);
+        if (GetPlotRange().IsEmpty())
+        {
+            return {};
+        }
         for (const auto & Plot : PlotBuffer)
         {
+            ViewportTransform Transform;
+            GenerateTransform(GetPlotRange(), Plot.second, Transform);
+            Algebra::Vector2D Position;
+            FromViewport(Transform, Plot.second, ViewportPosition, Position);
             if ( Plot.first->GetExtents().IsPointInside(Position) )
             {
-                return Plot.first;
+                std::pair<Algebra::Vector2D,Curve2D::MetaDataTagType> ClosestPointOnCurve = Plot.first->GetNearestPoint(Position);
+                if ( Position.GetX() != 0.0f && Position.GetY()!=0.0f )
+                {
+                    Plot.first->AddLabel("x", ClosestPointOnCurve.first);
+                }
             }
         }
         return {};

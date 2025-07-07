@@ -149,7 +149,9 @@ namespace Plotter
      */
     struct Curve2D
     {
+        using MetaDataTagType = uintptr_t;
         std::vector<Algebra::Vector2D> Points;
+        std::vector<MetaDataTagType> PointMetaTags;
         Range2D Extents;
         ColorRGB Color;
 
@@ -164,10 +166,30 @@ namespace Plotter
             Color = InColor;
         }
         
-        void AddPoint(float x, float y)
+        void AddPoint(float x, float y, MetaDataTagType MetaDataTag=0)
         {
-            Points.push_back({x,y});
+            Points.emplace_back(x,y);
+            PointMetaTags.push_back(MetaDataTag);
             Extents.Update(x,y);
+        }
+
+        std::pair<Algebra::Vector2D, MetaDataTagType> GetNearestPoint(Algebra::Vector2D& ProbePoint) const
+        {
+            Algebra::Vector2D ClosestPoint = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+            float ClosestDistanceSq = std::numeric_limits<float>::max();
+            size_t ClosestPointIndex;
+            size_t PointIndex = 0;
+            for ( const auto& Point : Points )
+            {
+                const float DistanceSq = (ProbePoint - Point).LengthSq();
+                if (DistanceSq < ClosestDistanceSq)
+                {
+                    ClosestPoint = Point;
+                    ClosestPointIndex = PointIndex++;
+                    ClosestDistanceSq = DistanceSq;
+                }
+            }
+            return {ClosestPoint, ClosestPointIndex};
         }
     };
 
@@ -231,6 +253,18 @@ namespace Plotter
         Range2D GetExtents() const
         {
             return Extents;
+        }
+
+        std::pair<Algebra::Vector2D, Curve2D::MetaDataTagType> GetNearestPoint(Algebra::Vector2D& ProbePoint) const
+        {
+            for (const auto& Curve : Curves)
+            {
+                if (Curve.Extents.IsPointInside(ProbePoint))
+                {
+                    return Curve.GetNearestPoint(ProbePoint);
+                }
+            }
+            return {};
         }
     };
 

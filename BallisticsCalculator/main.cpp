@@ -25,7 +25,8 @@ namespace
             Curve2D Curve;
             for (size_t nQ = 1; nQ < TrajectoryDataPoints.size(); ++nQ)
             {
-                Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY);
+                Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY,
+                    reinterpret_cast<Curve2D::MetaDataTagType>(&TrajectoryDataPoints[nQ]));
             }
             Curve.Color = Magenta;
             TrajectoryPlot->AddCurve(Curve);
@@ -101,25 +102,6 @@ namespace
         
         Ballistics::SolveTrajectoryG7(TrajectoryDataPoints, FiringData, Environment, Solver);
     }
-
-    const Ballistics::TrajectoryDataPoint& NearestPoint(const Algebra::Vector2D& SamplePoint)
-    {
-        float MinDistance = std::numeric_limits<float>::max();
-        size_t MinIndex = 0;
-        for (size_t nQ = 1; nQ < TrajectoryDataPoints.size(); ++nQ)
-        {
-            const float DeltaX = TrajectoryDataPoints[nQ].DistanceX - SamplePoint.GetX();
-            const float DeltaY = TrajectoryDataPoints[nQ].DistanceY - SamplePoint.GetY();
-            const float DeltaSq = (DeltaX * DeltaX) + (DeltaY * DeltaY);
-            if (DeltaSq < MinDistance)
-            {
-                MinDistance = DeltaSq;
-                MinIndex = nQ;
-            }
-        }
-        return TrajectoryDataPoints[MinIndex];
-    }
-    
 }
 
 #ifdef WITH_SDL

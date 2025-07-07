@@ -106,7 +106,7 @@ namespace
         case SDL_EVENT_MOUSE_BUTTON_UP:
         case SDL_EVENT_MOUSE_MOTION:
             {
-                //
+                PlotPtr Plot = ViewportPointInPlot({event->motion.x,event->motion.y});
             }
             break;
         default:;
