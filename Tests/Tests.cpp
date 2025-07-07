@@ -1,5 +1,6 @@
 
 #include <Curves.h>
+#include <Algebra.h>
 #include <Ballistics.h>
 #include <cassert>
 
@@ -28,8 +29,8 @@ namespace
         std::vector<Algebra::Vector2D> Samples2D;
         SinSegment.SampleAdaptively(Samples2D, 0.0f, 1.0f, 0.01f);
         assert(Samples2D.size() >= 4);
-        assert(fabsf(Samples2D[0] - P1) < 0.001f);
-        assert(fabsf(Samples2D[Samples2D.size()-1] - P2) < 0.001f);
+        assert(Samples2D[0].NearlyEqual(P1));
+        assert(Samples2D[Samples2D.size()-1].NearlyEqual(P2));
     }
 
     void TestZero()
@@ -60,11 +61,29 @@ namespace
 
         assert(FiringData.ZeroAngle > 0.0f);
     }
+
+    void TestAlgebra()
+    {
+        Algebra::Matrix2D M1 = Algebra::Matrix2D::Rotation(std::numbers::pi / 4.0f);
+        std::optional<Algebra::Matrix2D> M1Inv = M1.Inverse();
+        assert(M1Inv.has_value());
+        Algebra::Matrix2D M2 = M1 * M1Inv.value();
+        assert(M2.Determinant() == 1.0f);
+        Algebra::Vector2D UnitVectorX(1.0f, 0.0f);
+        Algebra::Vector2D UnitVectorY(1.0f, 0.0f);
+        Algebra::Vector2D RotatedUnitVectorX = M1 * UnitVectorX;
+        assert(MathLib::NearlyEqual(RotatedUnitVectorX.LengthSq(), 1.0f));
+        assert(MathLib::NearlyEqual(RotatedUnitVectorX.GetX(), RotatedUnitVectorX.GetY()));
+        Algebra::Vector2D RotatedUnitVectorY = M1 * UnitVectorY;
+        assert(MathLib::NearlyEqual(RotatedUnitVectorY.LengthSq(), 1.0f));
+        assert(MathLib::NearlyEqual(RotatedUnitVectorY.GetX(), RotatedUnitVectorY.GetY()));
+    }
 }
 
 int main(int argc, char* argv[])
 {
     TestCatmullRom();
     TestZero();
+    TestAlgebra();
     return 0;
 }

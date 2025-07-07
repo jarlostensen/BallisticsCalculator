@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="include\Algebra.h" />
     <ClInclude Include="include\Curves.h" />
+    <ClInclude Include="include\Maths.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MathLib.cpp" />

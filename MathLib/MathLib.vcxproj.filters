@@ -21,6 +21,9 @@
     <ClInclude Include="include\Curves.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\Maths.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MathLib.cpp">

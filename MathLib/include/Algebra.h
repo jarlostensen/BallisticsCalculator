@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <cmath>
 #include <optional>
+#include "Maths.h"
 
 namespace Algebra
 {
@@ -94,6 +95,11 @@ namespace Algebra
         {
             return this->Dot(*this);
         }
+
+        bool NearlyEqual(const Vector2D& Rhs) const
+        {
+            return MathLib::NearlyEqual(X, Rhs.X) && MathLib::NearlyEqual(Y, Rhs.Y);
+        }
     };
 
     class Matrix2D
@@ -123,6 +129,17 @@ namespace Algebra
             Elements[0][1] = Rhs.Elements[0][1];
             Elements[1][0] = Rhs.Elements[1][0];
             Elements[1][1] = Rhs.Elements[1][1];
+        }
+
+        bool NearlyEqual(const Matrix2D& Lhs, const Matrix2D& Rhs) const
+        {
+            return MathLib::NearlyEqual(Lhs.Elements[0][0], Rhs.Elements[0][0])
+                &&
+                MathLib::NearlyEqual(Lhs.Elements[0][1], Rhs.Elements[0][1])
+                &&
+                MathLib::NearlyEqual(Lhs.Elements[1][0], Rhs.Elements[1][0])
+                &&
+                MathLib::NearlyEqual(Lhs.Elements[1][1], Rhs.Elements[1][1]);
         }
         
         float& operator()(int row, int col) 
