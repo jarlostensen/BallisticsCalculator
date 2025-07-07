@@ -4,8 +4,6 @@ VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BallisticsCalculator", "BallisticsCalculator\BallisticsCalculator.vcxproj", "{639F9A3B-3DED-48AA-BCBA-0F854C94644B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SDL3", "..\..\SDL\VisualC\SDL\SDL.vcxproj", "{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ballistics", "Ballistics\Ballistics.vcxproj", "{8B8DBF94-D322-4FEA-BED4-F524B3097A49}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tests", "Tests\Tests.vcxproj", "{E0559E7C-ABEB-4C5D-B43C-D44F6EF5E9ED}"
@@ -13,6 +11,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UiLib", "UiLib\UiLib.vcxproj", "{16A1A322-A0E4-4014-A6EA-E02B6875BA97}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathLib", "MathLib\MathLib.vcxproj", "{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SDL", "ThirdParty\SDL\VisualC\SDL\SDL.vcxproj", "{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,14 +30,6 @@ Global
 		{639F9A3B-3DED-48AA-BCBA-0F854C94644B}.Release|x64.Build.0 = Release|x64
 		{639F9A3B-3DED-48AA-BCBA-0F854C94644B}.Release|x86.ActiveCfg = Release|Win32
 		{639F9A3B-3DED-48AA-BCBA-0F854C94644B}.Release|x86.Build.0 = Release|Win32
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Debug|x64.ActiveCfg = Debug|x64
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Debug|x64.Build.0 = Debug|x64
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Debug|x86.ActiveCfg = Debug|Win32
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Debug|x86.Build.0 = Debug|Win32
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Release|x64.ActiveCfg = Release|x64
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Release|x64.Build.0 = Release|x64
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Release|x86.ActiveCfg = Release|Win32
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Release|x86.Build.0 = Release|Win32
 		{8B8DBF94-D322-4FEA-BED4-F524B3097A49}.Debug|x64.ActiveCfg = Debug|x64
 		{8B8DBF94-D322-4FEA-BED4-F524B3097A49}.Debug|x64.Build.0 = Debug|x64
 		{8B8DBF94-D322-4FEA-BED4-F524B3097A49}.Debug|x86.ActiveCfg = Debug|Win32
@@ -70,6 +62,14 @@ Global
 		{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}.Release|x64.Build.0 = Release|x64
 		{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}.Release|x86.ActiveCfg = Release|Win32
 		{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}.Release|x86.Build.0 = Release|Win32
+		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Debug|x64.ActiveCfg = Debug|x64
+		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Debug|x64.Build.0 = Debug|x64
+		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Debug|x86.ActiveCfg = Debug|Win32
+		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Debug|x86.Build.0 = Debug|Win32
+		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Release|x64.ActiveCfg = Release|x64
+		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Release|x64.Build.0 = Release|x64
+		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Release|x86.ActiveCfg = Release|Win32
+		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

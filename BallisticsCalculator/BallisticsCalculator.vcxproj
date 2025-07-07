@@ -156,11 +156,12 @@
     <ClInclude Include="Application.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\SDL\VisualC\SDL\SDL.vcxproj">
-      <Project>{81ce8daf-ebb2-4761-8e45-b71abcca8c68}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\Ballistics\Ballistics.vcxproj">
       <Project>{8b8dbf94-d322-4fea-bed4-f524b3097a49}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\ThirdParty\SDL\VisualC\SDL\SDL.vcxproj">
+      <Project>{81ce8daf-ebb2-4761-8e45-b71abcca8c68}</Project>
+      <Name>SDL3</Name>
     </ProjectReference>
     <ProjectReference Include="..\UiLib\UiLib.vcxproj">
       <Project>{16a1a322-a0e4-4014-a6ea-e02b6875ba97}</Project>
