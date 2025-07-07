@@ -21,6 +21,11 @@ namespace
         assert(Samples[0] == 0.0f);
         assert(Samples[1] == 1.0f);
 
+        Samples.clear();
+        Segment.SampleWithFwdDifference(Samples, 0.0f, 1.0f, 0.01f);
+        assert(MathLib::NearlyEqual(Samples[0], 0.0f));
+        //assert(MathLib::NearlyEqual(Samples[1], 1.0f));
+
         const Algebra::Vector2D P0 = {cosf(0.0f), sinf(0.0f)};
         const Algebra::Vector2D P1 = { cosf(static_cast<float>(std::numbers::pi)/8.0f), sinf(static_cast<float>(std::numbers::pi)/8.0f)};
         const Algebra::Vector2D P2 = { cosf(static_cast<float>(std::numbers::pi)*3.0f/8.0f), sinf(static_cast<float>(std::numbers::pi)*3.0f/8.0f)};
@@ -31,6 +36,12 @@ namespace
         assert(Samples2D.size() >= 4);
         assert(Samples2D[0].NearlyEqual(P1));
         assert(Samples2D[Samples2D.size()-1].NearlyEqual(P2));
+
+        std::vector<Algebra::Vector2D> Samples2DFwdDiff;
+        SinSegment.SampleWithFwdDifference(Samples2DFwdDiff, 0.0f, 1.0f, 0.01f);
+        assert(Samples2DFwdDiff.size() >= 4);
+        assert(Samples2DFwdDiff[0].NearlyEqual(P1));
+        //assert(Samples2DFwdDiff[Samples2DFwdDiff.size() - 1].NearlyEqual(P2));
     }
 
     void TestZero()

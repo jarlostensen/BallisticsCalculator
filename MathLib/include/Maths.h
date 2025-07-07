@@ -3,8 +3,9 @@
 
 namespace MathLib
 {
+	constexpr float Epsilon = 1e-6f;
 	inline bool NearlyEqual(float Lhs, float Rhs)
 	{
-		return std::fabsf(Lhs - Rhs) <= 1e-6f;
+		return std::fabsf(Lhs - Rhs) <= Epsilon;
 	}
 }

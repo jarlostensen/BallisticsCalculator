@@ -32,15 +32,31 @@ namespace Curves
         /**
          * Adaptively samples the curve between t and t+dt to within error and returns *pairs* of points in the provided vector
          * @param OutSamples 
-         * @param t 
-         * @param dt 
-         * @param error 
+         * @param t starting t0
+         * @param dt t1 = t0 + dt
+         * @param error tolerance when splitting line segments
          */
-        void SampleAdaptively(std::vector<T>& OutSamples, float t, float dt, float error) const
+        void SampleAdaptively(std::vector<T>& OutSamples, float t, float dt, float error=MathLib::Epsilon) const
         {
             const T S0 = this->operator()(t);
             const T S1 = this->operator()(t+dt);
             SampleAdaptivelyImpl(OutSamples, S0,S1, t, t+dt, error);
+        }
+
+        void SampleWithFwdDifference(std::vector<T>& OutSamples, float t0, float t1, float dt) const
+        {
+            T y = this->operator()(t0);
+            T dy = 0.5f * (2.0f * H3 * (t0 * t0) + 2.0f * H2 * t0 + H1);
+            T ddy = 0.5f * (6.0f * H3 * t0 + 2.0f * H2);
+            T dddy = 0.5f * 6.0f * H3;
+            float t;
+            for ( t = t0; t < t1; t+=dt)
+            {
+                OutSamples.push_back(y);
+                y += dy * dt;
+                dy += ddy * dt;
+                ddy += dddy * dt;
+            }
         }
 
     private:

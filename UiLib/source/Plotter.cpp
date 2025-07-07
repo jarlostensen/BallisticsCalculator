@@ -116,10 +116,7 @@ namespace Plotter
             if ( Plot.first->GetExtents().IsPointInside(Position) )
             {
                 std::pair<Algebra::Vector2D,Curve2D::MetaDataTagType> ClosestPointOnCurve = Plot.first->GetNearestPoint(Position);
-                if ( Position.GetX() != 0.0f && Position.GetY()!=0.0f )
-                {
-                    ViewportPointInPlotDelegate(ClosestPointOnCurve.first, ClosestPointOnCurve.second);
-                }
+                ViewportPointInPlotDelegate(ClosestPointOnCurve.first, ClosestPointOnCurve.second);
             }
         }
         return {};
