@@ -106,7 +106,10 @@ namespace
         case SDL_EVENT_MOUSE_BUTTON_UP:
         case SDL_EVENT_MOUSE_MOTION:
             {
-                PlotPtr Plot = ViewportPointInPlot({event->motion.x,event->motion.y});
+                PlotPtr Plot = ViewportPointInPlot({event->motion.x,event->motion.y}, [](const Algebra::Vector2D& Point, Curve2D::MetaDataTagType Tag)
+                {
+                    AppHitDelegate(Point, Tag);
+                });
             }
             break;
         default:;

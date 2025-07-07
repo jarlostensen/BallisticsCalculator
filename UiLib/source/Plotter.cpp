@@ -101,7 +101,7 @@ namespace Plotter
         return MaximalDataRange;   
     }
 
-    PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition)
+    PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition, ViewportPointInPlotDelegateType&& ViewportPointInPlotDelegate)
     {
         if (GetPlotRange().IsEmpty())
         {
@@ -118,7 +118,7 @@ namespace Plotter
                 std::pair<Algebra::Vector2D,Curve2D::MetaDataTagType> ClosestPointOnCurve = Plot.first->GetNearestPoint(Position);
                 if ( Position.GetX() != 0.0f && Position.GetY()!=0.0f )
                 {
-                    Plot.first->AddLabel("x", ClosestPointOnCurve.first);
+                    ViewportPointInPlotDelegate(ClosestPointOnCurve.first, ClosestPointOnCurve.second);
                 }
             }
         }

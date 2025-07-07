@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <algorithm>
+#include <functional>
 #include <string>
 #include <vector>
 #include <memory>
@@ -177,7 +178,7 @@ namespace Plotter
         {
             Algebra::Vector2D ClosestPoint = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
             float ClosestDistanceSq = std::numeric_limits<float>::max();
-            size_t ClosestPointIndex;
+            size_t ClosestPointIndex = 0;
             size_t PointIndex = 0;
             for ( const auto& Point : Points )
             {
@@ -189,7 +190,7 @@ namespace Plotter
                     ClosestDistanceSq = DistanceSq;
                 }
             }
-            return {ClosestPoint, ClosestPointIndex};
+            return {ClosestPoint, PointMetaTags[ClosestPointIndex]};
         }
     };
 
@@ -302,6 +303,8 @@ namespace Plotter
     void EndFrame();
     
     Range2D GetPlotRange();
-    PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition);
+
+    using ViewportPointInPlotDelegateType = std::function<void(const Algebra::Vector2D&, Curve2D::MetaDataTagType)>;
+    PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition, ViewportPointInPlotDelegateType&& ViewportPointInPlotDelegate);
     
 }

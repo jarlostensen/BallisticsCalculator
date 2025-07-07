@@ -14,7 +14,7 @@ namespace
     Ballistics::EnvironmentData Environment;
     Ballistics::FiringData FiringData;
     std::vector<Ballistics::TrajectoryDataPoint> TrajectoryDataPoints;
-
+    int DataPointSelectionIndex = -1;
     PlotPtr TrajectoryPlot;
 
     void DrawUi()
@@ -25,8 +25,7 @@ namespace
             Curve2D Curve;
             for (size_t nQ = 1; nQ < TrajectoryDataPoints.size(); ++nQ)
             {
-                Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY,
-                    reinterpret_cast<Curve2D::MetaDataTagType>(&TrajectoryDataPoints[nQ]));
+                Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY, nQ);
             }
             Curve.Color = Magenta;
             TrajectoryPlot->AddCurve(Curve);
@@ -67,6 +66,12 @@ namespace
         
         DrawText(std::format("Muzzle velocity is {:.1f}m/s", BulletData.MuzzleVelocityMs), {10.f, 25.f});
         DrawText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
+        
+        if ( DataPointSelectionIndex>=0 )
+        {
+            DrawText(std::format("{:.1f}m/s",TrajectoryDataPoints[DataPointSelectionIndex].VelocityX), {10.0f, 55.0f});
+        }
+
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();
         ViewportExtents.Min.SetX( ViewportExtents.Min.GetX() + ViewportExtents.Width()*0.1f);
         ViewportExtents.Min.SetY( ViewportExtents.Min.GetY() + ViewportExtents.Height()*0.15f);
@@ -102,6 +107,7 @@ namespace
         
         Ballistics::SolveTrajectoryG7(TrajectoryDataPoints, FiringData, Environment, Solver);
     }
+
 }
 
 #ifdef WITH_SDL
@@ -113,6 +119,11 @@ void AppInit()
 void AppUpdate()
 {
     DrawUi();
+}
+
+void AppHitDelegate(const Algebra::Vector2D& /*Point*/, Plotter::Curve2D::MetaDataTagType Tag)
+{
+    DataPointSelectionIndex = static_cast<int>(Tag);
 }
 #else
 int main(int /*argc*/, char** /*argv*/)
