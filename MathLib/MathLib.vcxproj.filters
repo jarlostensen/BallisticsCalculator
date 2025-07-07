@@ -15,12 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Plotter.h">
+    <ClInclude Include="include\Algebra.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Curves.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\Plotter.cpp">
+    <ClCompile Include="MathLib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

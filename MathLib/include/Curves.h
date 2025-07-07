@@ -2,7 +2,6 @@
 
 #include <vector>
 #include "Algebra.h"
-#include "Plotter.h"
 
 namespace Curves
 {

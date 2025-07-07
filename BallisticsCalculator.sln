@@ -12,6 +12,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tests", "Tests\Tests.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UiLib", "UiLib\UiLib.vcxproj", "{16A1A322-A0E4-4014-A6EA-E02B6875BA97}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathLib", "MathLib\MathLib.vcxproj", "{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -60,6 +62,14 @@ Global
 		{16A1A322-A0E4-4014-A6EA-E02B6875BA97}.Release|x64.Build.0 = Release|x64
 		{16A1A322-A0E4-4014-A6EA-E02B6875BA97}.Release|x86.ActiveCfg = Release|Win32
 		{16A1A322-A0E4-4014-A6EA-E02B6875BA97}.Release|x86.Build.0 = Release|Win32
+		{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}.Debug|x64.ActiveCfg = Debug|x64
+		{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}.Debug|x64.Build.0 = Debug|x64
+		{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}.Debug|x86.ActiveCfg = Debug|Win32
+		{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}.Debug|x86.Build.0 = Debug|Win32
+		{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}.Release|x64.ActiveCfg = Release|x64
+		{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}.Release|x64.Build.0 = Release|x64
+		{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}.Release|x86.ActiveCfg = Release|Win32
+		{7227FC0F-F5EB-4A4A-9C6C-B2C8CAC41B8E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

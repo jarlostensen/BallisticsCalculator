@@ -25,7 +25,7 @@ namespace
             Curve2D Curve;
             for (size_t nQ = 1; nQ < TrajectoryDataPoints.size(); ++nQ)
             {
-                Curve.AddPoint(TrajectoryDataPoints[nQ].DistanceX, TrajectoryDataPoints[nQ].DistanceY, nQ);
+                Curve.AddPoint(TrajectoryDataPoints[nQ].Position.GetX(), TrajectoryDataPoints[nQ].Position.GetY(), nQ);
             }
             Curve.Color = Magenta;
             TrajectoryPlot->AddCurve(Curve);
@@ -68,14 +68,14 @@ namespace
         DrawText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
         
         if ( DataPointSelectionIndex>=0 )
-        {
-            const float KineticEnergy = 0.5f * FiringData.Bullet.GetMassKg() * ((TrajectoryDataPoints[DataPointSelectionIndex].VelocityX * TrajectoryDataPoints[DataPointSelectionIndex].VelocityX) + (TrajectoryDataPoints[DataPointSelectionIndex].VelocityY * TrajectoryDataPoints[DataPointSelectionIndex].VelocityY));   
+        { 
+            const float KineticEnergy = 0.5f * FiringData.Bullet.GetMassKg() * TrajectoryDataPoints[DataPointSelectionIndex].Velocity.LengthSq();
             TrajectoryPlot->AddTransientLabel(std::format("x:{:.1f}m/s\ny:{:.1f}m/s\n{:.1f}J @ t:{:.01f}s",
-                TrajectoryDataPoints[DataPointSelectionIndex].VelocityX,
-                TrajectoryDataPoints[DataPointSelectionIndex].VelocityY,
+                TrajectoryDataPoints[DataPointSelectionIndex].Velocity.GetX(),
+                TrajectoryDataPoints[DataPointSelectionIndex].Velocity.GetY(),
                 KineticEnergy,
                 TrajectoryDataPoints[DataPointSelectionIndex].T),
-                {TrajectoryDataPoints[DataPointSelectionIndex].DistanceX,TrajectoryDataPoints[DataPointSelectionIndex].DistanceY}, DarkGray);
+                TrajectoryDataPoints[DataPointSelectionIndex].Position, DarkGray);
         }
 
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();

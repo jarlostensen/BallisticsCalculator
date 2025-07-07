@@ -27,7 +27,7 @@ namespace Ballistics
         }
         virtual bool Completed() const
         {
-            return Q.T >= Params.MaxTime || Q.DistanceY < 0.0f;
+            return Q.T >= Params.MaxTime || Q.Position.GetY() < 0.0f;
         }
         virtual bool Terminated() const
         {
@@ -49,11 +49,9 @@ namespace Ballistics
 
         virtual void Advance() override
         {
-            const float DragAcceleration = -DragFactor * GetDragCoefficient(G7, Q.VelocityX, Environment.TKelvin) * (Q.VelocityX * Q.VelocityX);
-            Q.VelocityX += DragAcceleration * Params.TimeStep;
-            Q.VelocityY += Environment.Gravity * Params.TimeStep;
-            Q.DistanceX += Q.VelocityX * Params.TimeStep;
-            Q.DistanceY += Q.VelocityY * Params.TimeStep;
+            const float DragAcceleration = -DragFactor * GetDragCoefficient(G7, Q.Velocity.GetX(), Environment.TKelvin) * (Q.Velocity.GetX() * Q.Velocity.GetX());
+            Q.Velocity += {DragAcceleration*Params.TimeStep, Environment.Gravity*Params.TimeStep};
+            Q.Position += Params.TimeStep * Q.Velocity;
             Q.T += Params.TimeStep;
         }
     };
@@ -63,8 +61,7 @@ namespace Ballistics
         HybridEulerRk4Solver(const FiringData& InFiringData, const EnvironmentData& InEnvironment, const SolverParams& SolverParams)
             : SolverBase(InFiringData, InEnvironment, SolverParams)
         {
-            LastQ.first = InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle);
-            LastQ.second = InFiringData.Bullet.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle);
+            LastQ = { InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle), InFiringData.Bullet.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle) };
             
             VelocitySolver.Initialize(InFiringData.Bullet.MuzzleVelocityMs, SolverParams.TimeStep, [this](float V, float /* t */) -> float
                 {
@@ -75,16 +72,11 @@ namespace Ballistics
         virtual void Advance() override
         {
             const float FlightVelocity = VelocitySolver.Advance();
-            const float AngleOfAttack = std::atan2f(LastQ.second, LastQ.first);
+            const float AngleOfAttack = std::atan2f(LastQ.GetY(), LastQ.GetX());
             
-            Q.VelocityX = FlightVelocity * std::cosf(AngleOfAttack);
-            Q.DistanceX += Q.VelocityX * Params.TimeStep;
-            Q.VelocityY = FlightVelocity*std::sinf(AngleOfAttack) + Environment.Gravity * Params.TimeStep;
-            Q.DistanceY += Q.VelocityY * Params.TimeStep;
-
-            LastQ.first = Q.VelocityX;
-            LastQ.second = Q.VelocityY;
-
+            Q.Velocity = {FlightVelocity*std::cosf(AngleOfAttack), FlightVelocity*std::sinf(AngleOfAttack) + Environment.Gravity * Params.TimeStep};
+            Q.Position += Params.TimeStep * Q.Velocity;
+            LastQ = Q.Velocity;
             Q.T += Params.TimeStep;
         }
 
@@ -92,19 +84,19 @@ namespace Ballistics
         {
             SolverBase::Reset(InFiringData);
             VelocitySolver.Reset();
-            LastQ.first = InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle);
-            LastQ.second = InFiringData.Bullet.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle);
+            LastQ.SetX(InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle));
+            LastQ.SetY(InFiringData.Bullet.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle));
         }
 
         Solver::RungeKutta4 VelocitySolver;
-        std::pair<float, float> LastQ;
+        Algebra::Vector2D LastQ;
     };
     
 	void SolveTrajectoryG7(std::vector<TrajectoryDataPoint>& OutElevation, const FiringData& InFiringData, const EnvironmentData& Environment, const SolverParams& InSolverParams)
 	{
         HybridEulerRk4Solver Solver(InFiringData, Environment, InSolverParams);
 
-        while (!Solver.Completed() && (InSolverParams.MaxX==0.0f || Solver.Q.DistanceX<InSolverParams.MaxX))
+        while (!Solver.Completed() && (InSolverParams.MaxX==0.0f || Solver.Q.Position.GetX()<InSolverParams.MaxX))
         {            
             Solver.Advance();
             OutElevation.emplace_back(Solver.Q);
@@ -136,18 +128,18 @@ namespace Ballistics
 
             while (!Solver.Completed()
                 &&
-                Solver.Q.DistanceX < ZeroDistance-ToleranceM)
+                Solver.Q.Position.GetX() < ZeroDistance-ToleranceM)
             {
                 Solver.Advance();
             }
 
             // definite miss?
-            if (fabsf(Solver.Q.DistanceY) > ToleranceM
+            if (fabsf(Solver.Q.Position.GetY()) > ToleranceM
                 ||
-                Solver.Q.DistanceX < ZeroDistance
+                Solver.Q.Position.GetX() < ZeroDistance
                 )
             {
-                if (Solver.Q.DistanceY < 0.0f)
+                if (Solver.Q.Position.GetY() < 0.0f)
                 {
                     // adjust up
                     MinAngle = ZeroAngle;
@@ -161,9 +153,9 @@ namespace Ballistics
             }
 
             // within target "box"?
-            if (Solver.Q.DistanceX >= ZeroDistance - ToleranceM
+            if (Solver.Q.Position.GetX() >= ZeroDistance - ToleranceM
                 &&
-                Solver.Q.DistanceX <= ZeroDistance + ToleranceM
+                Solver.Q.Position.GetX() <= ZeroDistance + ToleranceM
                 )
             {
                 // done, reset to the original height
