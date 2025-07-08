@@ -13,7 +13,7 @@ namespace
     SDL_Window* SdlWindow = NULL;
     SDL_Renderer* SdlRenderer = NULL;
     TTF_Font* SdlFont = nullptr;
-    Range2D ViewportExtents = {Algebra::Vector2D(0.0f,0.0f), Algebra::Vector2D(1200.0f,900.0f)};
+    Range2D ViewportExtents = {Algebra::Vector2D(0.0f,0.0f), Algebra::Vector2D(1600.0f,900.0f)};
 
     SDL_Texture* RenderText(const std::string &text, SDL_Color color) {
         SDL_Surface* textSurface = TTF_RenderText_Blended(SdlFont, text.data(), text.length(), color);
@@ -73,7 +73,9 @@ namespace
         (void)appstate;
         (void)argc;
         (void)argv;
-        if (!SDL_CreateWindowAndRenderer("Ballistics Calculator", 800, 600, SDL_WINDOW_RESIZABLE, &SdlWindow, &SdlRenderer)) {
+        if (!SDL_CreateWindowAndRenderer("Ballistics Calculator", 
+            static_cast<int>(ViewportExtents.Width()), static_cast<int>(ViewportExtents.Height()), 
+            SDL_WINDOW_RESIZABLE, &SdlWindow, &SdlRenderer)) {
             SDL_Log("Couldn't create window and renderer: %s", SDL_GetError());
             return SDL_APP_FAILURE;
         }

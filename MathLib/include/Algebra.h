@@ -17,7 +17,11 @@ namespace Algebra
         float GetY() const { return Y; }
         void SetX(float InX) { X = InX; }
         void SetY(float InY) { Y = InY; }
-        void Set(float InX, float InY) { X = InX; Y = InY; }
+        void Set(float InX, float InY) 
+        { 
+            X = InX; 
+            Y = InY; 
+        }
         Vector2D& Normalize()
         {
             float Length = this->LengthSq();
@@ -159,7 +163,7 @@ namespace Algebra
         std::optional<Matrix2D> Inverse() const
         {
             float det = Determinant();
-            if (std::abs(det) < 1e-6f)
+            if (std::abs(det) < MathLib::Epsilon)
             {
                 return std::nullopt;
             }

@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include "Algebra.h"
+#include "Curves.h"
 
 namespace Renderer
 {
@@ -126,7 +127,7 @@ namespace Plotter
     struct Label2D
     {
         std::string String;
-        Algebra::Vector2D Position;    
+        Algebra::Vector2D Position;
     };
 
     /**
@@ -136,8 +137,11 @@ namespace Plotter
     struct Line2D
     {
         Algebra::Vector2D Start;
-        Algebra::Vector2D End;   
+        Algebra::Vector2D End;
     };
+
+    class Plot;
+    using PlotPtr = std::shared_ptr<Plot>;
 
     /**
      * @struct Curve2D
@@ -146,14 +150,10 @@ namespace Plotter
      * This structure provides a mechanism for defining and managing a 2D curve with meta data attached to each point
      *
      */
-    struct Curve2D
+    class Curve2D
     {
+    public:
         using MetaDataTagType = uintptr_t;
-        std::vector<Algebra::Vector2D> Points;
-        std::vector<MetaDataTagType> PointMetaTags;
-        Range2D Extents;
-        ColorRGB Color;
-
         Curve2D()
         {
             Extents = EmptyRange2D;
@@ -164,12 +164,74 @@ namespace Plotter
         {
             Color = InColor;
         }
+
+        const ColorRGB& GetColor() const
+        {
+            return Color;
+        }
         
         void AddPoint(float x, float y, MetaDataTagType MetaDataTag=0)
         {
             Points.emplace_back(x,y);
             PointMetaTags.push_back(MetaDataTag);
             Extents.Update(x,y);
+        }
+
+        void AddPoint(const Algebra::Vector2D& Point, MetaDataTagType MetaDataTag = 0)
+        {
+            Points.emplace_back(Point);
+            PointMetaTags.push_back(MetaDataTag);
+            Extents.Update(Point.GetX(), Point.GetY());
+        }
+
+        struct PointInfo
+        {
+            Algebra::Vector2D Point;
+            Algebra::Vector2D Normal;
+            Algebra::Vector2D Tangent;
+            MetaDataTagType MetaDataTag;
+        };
+
+        void GetNearestPointInfo(Algebra::Vector2D& ProbePoint, PointInfo& OutPointInfo) const
+        {
+            Algebra::Vector2D ClosestPoint = { std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
+            float ClosestDistanceSq = std::numeric_limits<float>::max();
+            size_t ClosestPointIndex = 0;
+            size_t PointIndex = 0;
+            for (const auto& Point : Points)
+            {
+                const float DistanceSq = (ProbePoint - Point).LengthSq();
+                if (DistanceSq < ClosestDistanceSq)
+                {
+                    ClosestPoint = Point;
+                    ClosestPointIndex = PointIndex++;
+                    ClosestDistanceSq = DistanceSq;
+                }
+            }
+            OutPointInfo.Point = ClosestPoint;
+            OutPointInfo.MetaDataTag = PointMetaTags[ClosestPointIndex];
+            Curves::CatmullRomSegment2D Segment;
+            float SampleT = 0.0f;
+            if (ClosestPointIndex > 0 && ClosestPointIndex <= (Points.size() - 3))
+            {
+                Segment.SetCoefficients(Points[ClosestPointIndex - 1], Points[ClosestPointIndex], Points[ClosestPointIndex + 1], Points[ClosestPointIndex + 2]);
+            }
+            else if (ClosestPointIndex == 0)
+            {
+                Segment.SetCoefficients(Points[ClosestPointIndex], Points[ClosestPointIndex], Points[ClosestPointIndex + 1], Points[ClosestPointIndex + 2]);
+            }
+            else if (ClosestPointIndex == (Points.size()-1))
+            {
+                Segment.SetCoefficients(Points[ClosestPointIndex-2], Points[ClosestPointIndex-1], Points[ClosestPointIndex], Points[ClosestPointIndex]);
+                SampleT = 1.0f;
+            }
+            else
+            {
+                Segment.SetCoefficients(Points[ClosestPointIndex - 1], Points[ClosestPointIndex], Points[ClosestPointIndex+1], Points[ClosestPointIndex+1]);
+                SampleT = 1.0f;
+            }
+            OutPointInfo.Normal = Segment.Normal(SampleT);
+            OutPointInfo.Tangent = Segment.Tangent(SampleT);
         }
 
         std::pair<Algebra::Vector2D, MetaDataTagType> GetNearestPoint(Algebra::Vector2D& ProbePoint) const
@@ -190,10 +252,15 @@ namespace Plotter
             }
             return {ClosestPoint, PointMetaTags[ClosestPointIndex]};
         }
-    };
 
-    class Plot;
-    using PlotPtr = std::shared_ptr<Plot>;
+    private:
+        std::vector<Algebra::Vector2D> Points;
+        std::vector<MetaDataTagType> PointMetaTags;
+        Range2D Extents;
+        ColorRGB Color;
+        friend class Plot;
+        friend class Renderer::PlotRenderer;
+    };
 
     /**
      * @class Plot
@@ -210,6 +277,7 @@ namespace Plotter
         std::vector<std::pair<Label2D, ColorRGB>> Labels;
         std::vector<std::pair<Label2D, ColorRGB>> TransientLabels;
         std::vector<std::pair<Line2D, ColorRGB>> Lines;
+        Algebra::Vector2D SelectedPoint;
         Range2D Extents;
 
         struct PlotPrivate
@@ -233,6 +301,12 @@ namespace Plotter
         {
             Curves.push_back(Curve);
             Extents |= Curve.Extents;
+        }
+
+        void AddCurve(Curve2D&& Curve)
+        {
+            Extents |= Curve.Extents;
+            Curves.push_back(std::forward<Curve2D>(Curve));
         }
 
         void AddLabel(const std::string& String, const Algebra::Vector2D& Position, ColorRGB Color=Black)
@@ -270,6 +344,17 @@ namespace Plotter
                 }
             }
             return {};
+        }
+
+        void GetNearestPointInfo(Algebra::Vector2D& ProbePoint, Curve2D::PointInfo& OutPointInfo) const
+        {
+            for (const auto& Curve : Curves)
+            {
+                if (Curve.Extents.IsPointInside(ProbePoint))
+                {
+                    Curve.GetNearestPointInfo(ProbePoint, OutPointInfo);
+                }
+            }
         }
     };
 

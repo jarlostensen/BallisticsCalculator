@@ -52,6 +52,11 @@ namespace Ballistics
 		}
 	};
 
+	inline float KelvinToCelcius(float TK)
+	{
+		return TK - 272.15f;
+	}
+
 	/**
 	 * @brief Represents the configuration and parameters required for firing calculations.
 	 *

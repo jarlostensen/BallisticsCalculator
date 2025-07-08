@@ -23,14 +23,25 @@ namespace
         {
             TrajectoryPlot = Plot::Create();
             Curve2D Curve;
-            for (size_t nQ = 1; nQ < TrajectoryDataPoints.size(); ++nQ)
+            for (size_t nQ = 0; nQ < TrajectoryDataPoints.size(); ++nQ)
             {
                 Curve.AddPoint(TrajectoryDataPoints[nQ].Position.GetX(), TrajectoryDataPoints[nQ].Position.GetY(), nQ);
             }
-            Curve.Color = Magenta;
-            TrajectoryPlot->AddCurve(Curve);
-            const Range2D PlotRange = TrajectoryPlot->GetExtents();
-            
+            Curve.SetColor(Magenta);
+            TrajectoryPlot->AddCurve(std::move(Curve));
+            Range2D PlotRange = TrajectoryPlot->GetExtents();
+
+            const float Scale = 2.0f*static_cast<float>(std::numbers::pi) / TrajectoryDataPoints.size();
+            const float HalfWidth = 0.5f * PlotRange.Width();
+            const float HalfHeight = 0.5f * PlotRange.Height();
+            for (size_t nQ = 0; nQ < (TrajectoryDataPoints.size()/2); ++nQ)
+            {
+                Curve.AddPoint(HalfWidth * (1.0f + cosf(Scale * nQ)), PlotRange.Min.GetY() + HalfHeight * (1.0f + sinf(Scale * nQ)));
+            }
+            Curve.SetColor(Red);
+            TrajectoryPlot->AddCurve(std::move(Curve));
+            PlotRange = TrajectoryPlot->GetExtents();
+
             const float CurveHeight = PlotRange.Height();
             const float CenterLineYPos = PlotRange.Min.GetY() + CurveHeight/2.0f;
             const float HeightLineXPos = PlotRange.Min.GetX() + 1.0f;
@@ -66,16 +77,21 @@ namespace
         
         DrawText(std::format("Muzzle velocity is {:.1f}m/s", BulletData.MuzzleVelocityMs), {10.f, 25.f});
         DrawText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
+        DrawText(std::format("Calibre {:.2f}mm, bullet weight {} grains", FiringData.Bullet.CallibreMm, static_cast<int>(FiringData.Bullet.MassGr)), { 200.0f, 25.0f });
+        DrawText(std::format("Temperature {:.1f} Celcius", Ballistics::KelvinToCelcius(Environment.TKelvin)), {200.0f, 40.0f});
         
         if ( DataPointSelectionIndex>=0 )
         { 
+            Curve2D::PointInfo CurvePointInfo;
+            TrajectoryPlot->GetNearestPointInfo(TrajectoryDataPoints[DataPointSelectionIndex].Position, CurvePointInfo);
+
             const float KineticEnergy = 0.5f * FiringData.Bullet.GetMassKg() * TrajectoryDataPoints[DataPointSelectionIndex].Velocity.LengthSq();
-            TrajectoryPlot->AddTransientLabel(std::format("x:{:.1f}m/s\ny:{:.1f}m/s\n{:.1f}J @ t:{:.01f}s",
+            TrajectoryPlot->AddTransientLabel(std::format("x:{:.1f}m/s\ny:{:.1f}m/s\n{:.1f}J @ t:{:.001f}s",
                 TrajectoryDataPoints[DataPointSelectionIndex].Velocity.GetX(),
                 TrajectoryDataPoints[DataPointSelectionIndex].Velocity.GetY(),
                 KineticEnergy,
                 TrajectoryDataPoints[DataPointSelectionIndex].T),
-                TrajectoryDataPoints[DataPointSelectionIndex].Position, DarkGray);
+                TrajectoryDataPoints[DataPointSelectionIndex].Position + 4.0f*CurvePointInfo.Normal, DarkGray);
         }
 
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();
@@ -109,7 +125,7 @@ namespace
         Ballistics::SolverParams Solver;
         Solver.MaxTime = 10.0f;
         Solver.TimeStep = 0.01f;
-        Solver.MaxX = 350.0f;
+        Solver.MaxX = 300.0f;
         
         Ballistics::SolveTrajectoryG7(TrajectoryDataPoints, FiringData, Environment, Solver);
     }

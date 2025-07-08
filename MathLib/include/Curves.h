@@ -14,14 +14,36 @@ namespace Curves
     template<typename T>
     struct TCatmullRomSegment
     {
+        TCatmullRomSegment() = default;
         TCatmullRomSegment(T P0, T P1, T P2, T P3)
+        {
+            SetCoefficients(P0, P1, P2, P3);
+        }
+        TCatmullRomSegment(const TCatmullRomSegment& Rhs)
+            : H0(Rhs.H0),
+            H1(Rhs.H1),
+            H2(Rhs.H2),
+            H3(Rhs.H3)
+        {}
+        TCatmullRomSegment& operator=(const TCatmullRomSegment& Rhs)
+        {
+            H0 = Rhs.H0;
+            H1 = Rhs.H1;
+            H2 = Rhs.H2;
+            H3 = Rhs.H3;
+            return *this;
+        }
+
+        TCatmullRomSegment& SetCoefficients(T P0, T P1, T P2, T P3)
         {
             H0 = 2.0f * P1;
             H1 = (P2 - P0);
             H2 = (2.0f * P0 - 5.0f * P1 + 4.0f * P2 - P3);
             H3 = (-P0 + 3.0f * P1 - 3.0f * P2 + P3);
+            return *this;
         }
 
+        // evaluate curve at t
         T operator()(float t) const
         {
             const float tsq = t * t;
@@ -29,9 +51,24 @@ namespace Curves
             return 0.5f * (H0 + H1 * t + H2 * tsq + H3 * tcb);
         }
 
+        T At(float t) const
+        {
+            return this->operator()(t);
+        }
+
+        T Tangent(float t) const
+        {
+            return 0.5f * (3.0f * H3 * (t * t) + 2.0f * H2 * t + H1);
+        }
+
+        T Normal(float t) const
+        {
+            return 0.5f * (6.0f * H3 * t + 2.0f * H2);
+        }
+
         /**
          * Adaptively samples the curve between t and t+dt to within error and returns *pairs* of points in the provided vector
-         * @param OutSamples 
+         * @param OutSamples of minimum size 2 (one line segment)
          * @param t starting t0
          * @param dt t1 = t0 + dt
          * @param error tolerance when splitting line segments
@@ -43,19 +80,25 @@ namespace Curves
             SampleAdaptivelyImpl(OutSamples, S0,S1, t, t+dt, error);
         }
 
+        /**
+        * Sample curve using forward differencing 
+         * @param OutSamples of approximate size (t1-t0)/dt
+         * @param t0 start t
+         * @param t1 end t
+         * @param dt
+        */
         void SampleWithFwdDifference(std::vector<T>& OutSamples, float t0, float t1, float dt) const
         {
             T y = this->operator()(t0);
-            T dy = 0.5f * (2.0f * H3 * (t0 * t0) + 2.0f * H2 * t0 + H1);
-            T ddy = 0.5f * (6.0f * H3 * t0 + 2.0f * H2);
-            T dddy = 0.5f * 6.0f * H3;
-            float t;
-            for ( t = t0; t < t1; t+=dt)
+            T dy = Tangent(t0);
+            T ddy = Normal(t0);
+            const T dddy_dt = (0.5f * 6.0f * H3)*dt;
+            for (float t = t0; t < t1; t+=dt)
             {
                 OutSamples.push_back(y);
                 y += dy * dt;
                 dy += ddy * dt;
-                ddy += dddy * dt;
+                ddy += dddy_dt;
             }
         }
 
