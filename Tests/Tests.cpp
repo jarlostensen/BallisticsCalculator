@@ -42,6 +42,11 @@ namespace
         assert(Samples2DFwdDiff.size() >= 4);
         assert(Samples2DFwdDiff[0].NearlyEqual(P1));
         //assert(Samples2DFwdDiff[Samples2DFwdDiff.size() - 1].NearlyEqual(P2));
+
+        Algebra::Vector2D Normal = SinSegment.Normal(0.0f);
+        Algebra::Vector2D Tangent = SinSegment.Tangent(0.0f);
+        float DotProduct = Tangent.Dot(Normal);
+        assert(MathLib::NearlyEqual(DotProduct, 0.0f));
     }
 
     void TestZero()

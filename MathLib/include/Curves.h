@@ -1,10 +1,17 @@
 #pragma once
 
 #include <vector>
+#include <concepts>
 #include "Algebra.h"
 
 namespace Curves
 {
+    template<typename T>
+    concept HasDotProduct = requires(T t)
+    {
+        { t.Dot(t) } -> std::same_as<float>;
+    };
+
     /**
      * @brief Represents a single segment of a Catmull-Rom spline.
      *
@@ -61,11 +68,14 @@ namespace Curves
             return 0.5f * (3.0f * H3 * (t * t) + 2.0f * H2 * t + H1);
         }
 
-        T Normal(float t) const
+        T Curvature(float t) const
         {
             return 0.5f * (6.0f * H3 * t + 2.0f * H2);
         }
 
+        T Normal(float t) const requires (HasDotProduct<T>);
+        T Normal(float t) const requires (!HasDotProduct<T>);
+        
         /**
          * Adaptively samples the curve between t and t+dt to within error and returns *pairs* of points in the provided vector
          * @param OutSamples of minimum size 2 (one line segment)
@@ -91,7 +101,7 @@ namespace Curves
         {
             T y = this->operator()(t0);
             T dy = Tangent(t0);
-            T ddy = Normal(t0);
+            T ddy = Curvature(t0);
             const T dddy_dt = (0.5f * 6.0f * H3)*dt;
             for (float t = t0; t < t1; t+=dt)
             {
@@ -127,4 +137,20 @@ namespace Curves
     };
     using CatmullRomSegment1D = TCatmullRomSegment<float>;
     using CatmullRomSegment2D = TCatmullRomSegment<Algebra::Vector2D>;
+
+    template<typename T>
+    T TCatmullRomSegment<T>::Normal(float t) const requires (HasDotProduct<T>)
+    {
+        const T CurvatureAt = Curvature(t);
+        const T TangentAt = Tangent(t);
+        const float Normalization = CurvatureAt.Dot(TangentAt) / TangentAt.Dot(TangentAt); 
+        return CurvatureAt - Normalization * TangentAt;
+    }
+    template<typename T>
+    T TCatmullRomSegment<T>::Normal(float t) const requires (!HasDotProduct<T>)
+    {
+        const T CurvatureAt = Curvature(t);
+        const T TangentAt = Tangent(t);
+        return CurvatureAt - ((CurvatureAt * TangentAt) / (TangentAt * TangentAt)) * TangentAt;
+    }
 }
