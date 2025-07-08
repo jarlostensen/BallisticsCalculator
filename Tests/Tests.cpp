@@ -43,10 +43,13 @@ namespace
         assert(Samples2DFwdDiff[0].NearlyEqual(P1));
         //assert(Samples2DFwdDiff[Samples2DFwdDiff.size() - 1].NearlyEqual(P2));
 
-        Algebra::Vector2D Normal = SinSegment.Normal(0.0f);
-        Algebra::Vector2D Tangent = SinSegment.Tangent(0.0f);
-        float DotProduct = Tangent.Dot(Normal);
-        assert(MathLib::NearlyEqual(DotProduct, 0.0f));
+        for (float t = 0.0f; t < 1.0f; t += 0.01f)
+        {
+            Algebra::Vector2D Normal = SinSegment.Normal(t);
+            Algebra::Vector2D Tangent = SinSegment.Tangent(t);
+            float DotProduct = Tangent.Dot(Normal);
+            assert(MathLib::NearlyEqual(DotProduct, 0.0f));
+        }
     }
 
     void TestZero()

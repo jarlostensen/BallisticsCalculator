@@ -15,6 +15,7 @@ namespace
     Ballistics::FiringData FiringData;
     std::vector<Ballistics::TrajectoryDataPoint> TrajectoryDataPoints;
     int DataPointSelectionIndex = -1;
+    Curve2D::PointInfo SelectedCurvePointInfo;
     PlotPtr TrajectoryPlot;
 
     void DrawUi()
@@ -81,19 +82,18 @@ namespace
         DrawText(std::format("Temperature {:.1f} Celcius", Ballistics::KelvinToCelcius(Environment.TKelvin)), {200.0f, 40.0f});
         
         if ( DataPointSelectionIndex>=0 )
-        { 
-            Curve2D::PointInfo CurvePointInfo;
-            TrajectoryPlot->GetNearestPointInfo(TrajectoryDataPoints[DataPointSelectionIndex].Position, CurvePointInfo);
-
+        {
+            Algebra::Vector2D Tangent = SelectedCurvePointInfo.Tangent;
+            Algebra::Vector2D Normal = SelectedCurvePointInfo.Normal.Normalize();
             const float KineticEnergy = 0.5f * FiringData.Bullet.GetMassKg() * TrajectoryDataPoints[DataPointSelectionIndex].Velocity.LengthSq();
             TrajectoryPlot->AddTransientLabel(std::format("x:{:.1f}m/s\ny:{:.1f}m/s\n{:.1f}J @ t:{:.001f}s",
                 TrajectoryDataPoints[DataPointSelectionIndex].Velocity.GetX(),
                 TrajectoryDataPoints[DataPointSelectionIndex].Velocity.GetY(),
                 KineticEnergy,
                 TrajectoryDataPoints[DataPointSelectionIndex].T),
-                TrajectoryDataPoints[DataPointSelectionIndex].Position + 4.0f*CurvePointInfo.Normal, DarkGray);
-            TrajectoryPlot->AddTransientLine(TrajectoryDataPoints[DataPointSelectionIndex].Position, TrajectoryDataPoints[DataPointSelectionIndex].Position + 4.0f * CurvePointInfo.Tangent.Normalize(), Red);
-            TrajectoryPlot->AddTransientLine(TrajectoryDataPoints[DataPointSelectionIndex].Position, TrajectoryDataPoints[DataPointSelectionIndex].Position + 4.0f * CurvePointInfo.Normal.Normalize(), Red);
+                TrajectoryDataPoints[DataPointSelectionIndex].Position + 0.01f*Normal,
+                DarkGray);
+            TrajectoryPlot->AddTransientLine(TrajectoryDataPoints[DataPointSelectionIndex].Position, TrajectoryDataPoints[DataPointSelectionIndex].Position + Tangent, Blue);
         }
 
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();
@@ -145,9 +145,16 @@ void AppUpdate()
     DrawUi();
 }
 
-void AppHitDelegate(const Algebra::Vector2D& /*Point*/, Plotter::Curve2D::MetaDataTagType Tag)
+void AppHitDelegate(const Algebra::Vector2D& /*Point*/, Curve2D::MetaDataTagType Tag)
 {
-    DataPointSelectionIndex = static_cast<int>(Tag);
+    if (TrajectoryPlot->GetNearestPointInfo(Tag, SelectedCurvePointInfo))
+    {
+        DataPointSelectionIndex = static_cast<int>(Tag);
+    }
+    else
+    {
+        DataPointSelectionIndex = -1;
+    }
 }
 #else
 int main(int /*argc*/, char** /*argv*/)

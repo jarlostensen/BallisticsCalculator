@@ -184,6 +184,13 @@ namespace Plotter
             Extents.Update(Point.GetX(), Point.GetY());
         }
 
+        /**
+         * @struct PointInfo
+         * @brief Represents detailed information about a point in a 2D curve.
+         *
+         * This structure contains data for a specific point on a 2D curve contained in the plot, including its position,
+         * normal vector, tangent vector, and associated metadata
+         */
         struct PointInfo
         {
             Algebra::Vector2D Point;
@@ -192,6 +199,42 @@ namespace Plotter
             MetaDataTagType MetaDataTag;
         };
 
+        bool GetNearestPointInfo(MetaDataTagType MetaDataTag, PointInfo& OutPointInfo) const
+        {
+            for (size_t nT = 0; nT < PointMetaTags.size(); nT++)
+            {
+                if (PointMetaTags[nT] == MetaDataTag)
+                {
+                    OutPointInfo.Point = Points[nT];
+                    OutPointInfo.MetaDataTag = MetaDataTag;
+                    Curves::CatmullRomSegment2D Segment;
+                    float SampleT = 0.0f;
+                    if (nT > 0 && nT <= (Points.size() - 3))
+                    {
+                        Segment.SetCoefficients(Points[nT - 1], Points[nT], Points[nT + 1], Points[nT + 2]);
+                    }
+                    else if (nT == 0)
+                    {
+                        Segment.SetCoefficients(Points[nT], Points[nT], Points[nT + 1], Points[nT + 2]);
+                    }
+                    else if (nT == (Points.size()-1))
+                    {
+                        Segment.SetCoefficients(Points[nT-2], Points[nT-1], Points[nT], Points[nT]);
+                        SampleT = 1.0f;
+                    }
+                    else
+                    {
+                        Segment.SetCoefficients(Points[nT - 1], Points[nT], Points[nT+1], Points[nT+1]);
+                        SampleT = 1.0f;
+                    }
+                    OutPointInfo.Normal = Segment.Normal(SampleT);
+                    OutPointInfo.Tangent = Segment.Tangent(SampleT);
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         void GetNearestPointInfo(Algebra::Vector2D& ProbePoint, PointInfo& OutPointInfo) const
         {
             Algebra::Vector2D ClosestPoint = { std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
@@ -208,30 +251,7 @@ namespace Plotter
                     ClosestDistanceSq = DistanceSq;
                 }
             }
-            OutPointInfo.Point = ClosestPoint;
-            OutPointInfo.MetaDataTag = PointMetaTags[ClosestPointIndex];
-            Curves::CatmullRomSegment2D Segment;
-            float SampleT = 0.0f;
-            if (ClosestPointIndex > 0 && ClosestPointIndex <= (Points.size() - 3))
-            {
-                Segment.SetCoefficients(Points[ClosestPointIndex - 1], Points[ClosestPointIndex], Points[ClosestPointIndex + 1], Points[ClosestPointIndex + 2]);
-            }
-            else if (ClosestPointIndex == 0)
-            {
-                Segment.SetCoefficients(Points[ClosestPointIndex], Points[ClosestPointIndex], Points[ClosestPointIndex + 1], Points[ClosestPointIndex + 2]);
-            }
-            else if (ClosestPointIndex == (Points.size()-1))
-            {
-                Segment.SetCoefficients(Points[ClosestPointIndex-2], Points[ClosestPointIndex-1], Points[ClosestPointIndex], Points[ClosestPointIndex]);
-                SampleT = 1.0f;
-            }
-            else
-            {
-                Segment.SetCoefficients(Points[ClosestPointIndex - 1], Points[ClosestPointIndex], Points[ClosestPointIndex+1], Points[ClosestPointIndex+1]);
-                SampleT = 1.0f;
-            }
-            OutPointInfo.Normal = Segment.Normal(SampleT);
-            OutPointInfo.Tangent = Segment.Tangent(SampleT);
+            GetNearestPointInfo(PointMetaTags[ClosestPointIndex], OutPointInfo);
         }
 
         std::pair<Algebra::Vector2D, MetaDataTagType> GetNearestPoint(Algebra::Vector2D& ProbePoint) const
@@ -374,6 +394,18 @@ namespace Plotter
                     Curve.GetNearestPointInfo(ProbePoint, OutPointInfo);
                 }
             }
+        }
+
+        bool GetNearestPointInfo(Curve2D::MetaDataTagType MetaDataTag, Curve2D::PointInfo& OutPointInfo) const
+        {
+            for (const auto& Curve : Curves)
+            {
+                if ( Curve.GetNearestPointInfo(MetaDataTag, OutPointInfo) )
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     };
 
