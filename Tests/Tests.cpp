@@ -45,8 +45,8 @@ namespace
 
         for (float t = 0.0f; t < 1.0f; t += 0.01f)
         {
-            Algebra::Vector2D Normal = SinSegment.Normal(t);
-            Algebra::Vector2D Tangent = SinSegment.Tangent(t);
+            Algebra::Vector2D Normal = SinSegment.Normal(t).Normalize();
+            Algebra::Vector2D Tangent = SinSegment.Tangent(t).Normalize();
             float DotProduct = Tangent.Dot(Normal);
             assert(MathLib::NearlyEqual(DotProduct, 0.0f));
         }

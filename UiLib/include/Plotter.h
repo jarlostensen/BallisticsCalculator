@@ -444,7 +444,7 @@ namespace Plotter
     
     Range2D GetPlotRange();
 
-    using ViewportPointInPlotDelegateType = std::function<void(const Algebra::Vector2D&, Curve2D::MetaDataTagType)>;
+    using ViewportPointInPlotDelegateType = std::function<void(const Curve2D::PointInfo& PointInfo)>;
     PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition, ViewportPointInPlotDelegateType&& ViewportPointInPlotDelegate);
     
 }

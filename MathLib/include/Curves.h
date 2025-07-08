@@ -143,7 +143,7 @@ namespace Curves
     {
         const T CurvatureAt = Curvature(t);
         const T TangentAt = Tangent(t);
-        const float Normalization = CurvatureAt.Dot(TangentAt) / TangentAt.Dot(TangentAt); 
+        const float Normalization = CurvatureAt.Dot(TangentAt) / TangentAt.LengthSq(); 
         return CurvatureAt - Normalization * TangentAt;
     }
     template<typename T>

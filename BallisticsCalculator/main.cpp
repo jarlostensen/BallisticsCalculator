@@ -14,8 +14,8 @@ namespace
     Ballistics::EnvironmentData Environment;
     Ballistics::FiringData FiringData;
     std::vector<Ballistics::TrajectoryDataPoint> TrajectoryDataPoints;
-    int DataPointSelectionIndex = -1;
     Curve2D::PointInfo SelectedCurvePointInfo;
+    bool bCurveSelected = false;
     PlotPtr TrajectoryPlot;
 
     void DrawUi()
@@ -81,19 +81,20 @@ namespace
         DrawText(std::format("Calibre {:.2f}mm, bullet weight {} grains", FiringData.Bullet.CallibreMm, static_cast<int>(FiringData.Bullet.MassGr)), { 200.0f, 25.0f });
         DrawText(std::format("Temperature {:.1f} Celcius", Ballistics::KelvinToCelcius(Environment.TKelvin)), {200.0f, 40.0f});
         
-        if ( DataPointSelectionIndex>=0 )
+        if ( bCurveSelected )
         {
             Algebra::Vector2D Tangent = SelectedCurvePointInfo.Tangent;
             Algebra::Vector2D Normal = SelectedCurvePointInfo.Normal.Normalize();
-            const float KineticEnergy = 0.5f * FiringData.Bullet.GetMassKg() * TrajectoryDataPoints[DataPointSelectionIndex].Velocity.LengthSq();
+            const float KineticEnergy = 0.5f * FiringData.Bullet.GetMassKg() * TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Velocity.LengthSq();
             TrajectoryPlot->AddTransientLabel(std::format("x:{:.1f}m/s\ny:{:.1f}m/s\n{:.1f}J @ t:{:.001f}s",
-                TrajectoryDataPoints[DataPointSelectionIndex].Velocity.GetX(),
-                TrajectoryDataPoints[DataPointSelectionIndex].Velocity.GetY(),
+                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Velocity.GetX(),
+                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Velocity.GetY(),
                 KineticEnergy,
-                TrajectoryDataPoints[DataPointSelectionIndex].T),
-                TrajectoryDataPoints[DataPointSelectionIndex].Position + 0.01f*Normal,
+                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].T),
+                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position + 0.05f*Normal,
                 DarkGray);
-            TrajectoryPlot->AddTransientLine(TrajectoryDataPoints[DataPointSelectionIndex].Position, TrajectoryDataPoints[DataPointSelectionIndex].Position + Tangent, Blue);
+            TrajectoryPlot->AddTransientLine(TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position,
+                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position + Tangent, Blue);
         }
 
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();
@@ -145,16 +146,10 @@ void AppUpdate()
     DrawUi();
 }
 
-void AppHitDelegate(const Algebra::Vector2D& /*Point*/, Curve2D::MetaDataTagType Tag)
+void AppHitDelegate(const Curve2D::PointInfo& PointInfo)
 {
-    if (TrajectoryPlot->GetNearestPointInfo(Tag, SelectedCurvePointInfo))
-    {
-        DataPointSelectionIndex = static_cast<int>(Tag);
-    }
-    else
-    {
-        DataPointSelectionIndex = -1;
-    }
+    SelectedCurvePointInfo = PointInfo;
+    bCurveSelected = true;
 }
 #else
 int main(int /*argc*/, char** /*argv*/)
