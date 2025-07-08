@@ -275,8 +275,22 @@ namespace Plotter
     {
         std::vector<Curve2D> Curves;
         std::vector<std::pair<Label2D, ColorRGB>> Labels;
-        std::vector<std::pair<Label2D, ColorRGB>> TransientLabels;
         std::vector<std::pair<Line2D, ColorRGB>> Lines;
+        struct
+        {
+            std::vector<std::pair<Label2D, ColorRGB>> Labels;
+            std::vector<std::pair<Line2D, ColorRGB>> Lines;
+            void Clear()
+            {
+                Labels.clear();
+                Lines.clear();
+            }
+            operator bool() const
+            {
+                return !Labels.empty() || !Lines.empty();
+            }
+        } TransientElements;
+
         Algebra::Vector2D SelectedPoint;
         Range2D Extents;
 
@@ -316,7 +330,12 @@ namespace Plotter
 
         void AddTransientLabel(const std::string& String, const Algebra::Vector2D& Position, ColorRGB Color=Black)
         {
-            TransientLabels.push_back({{String, Position},Color});
+            TransientElements.Labels.push_back({{String, Position},Color});
+        }
+
+        void AddTransientLine(const Algebra::Vector2D& Start, const Algebra::Vector2D& End, ColorRGB Color = Black)
+        {
+            TransientElements.Lines.push_back({ {Start, End},Color });
         }
 
         void AddLine(const Algebra::Vector2D& Start, const Algebra::Vector2D& End, ColorRGB Color=Black)

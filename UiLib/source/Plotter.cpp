@@ -230,13 +230,29 @@ namespace Renderer
                     RendererImpl->DrawText(Label.first.String, TransformedLabelPosition, Label.second);
                 }
 
-                for (const auto & Label : Plot.first->TransientLabels)
+                if(Plot.first->TransientElements)
                 {
-                    Algebra::Vector2D TransformedLabelPosition;
-                    ToViewport(Transform,ViewportWindowExtents, Label.first.Position, TransformedLabelPosition);
-                    RendererImpl->DrawText(Label.first.String, TransformedLabelPosition, Label.second);
+                    for (const auto& Label : Plot.first->TransientElements.Labels)
+                    {
+                        Algebra::Vector2D TransformedLabelPosition;
+                        ToViewport(Transform, ViewportWindowExtents, Label.first.Position, TransformedLabelPosition);
+                        RendererImpl->DrawText(Label.first.String, TransformedLabelPosition, Label.second);
+                    }
+
+                    for (const auto& Line : Plot.first->TransientElements.Lines)
+                    {
+                        Line2D TransformedLine;
+                        ToViewport(Transform, ViewportWindowExtents, Line.first, TransformedLine);
+                        RendererImpl->DrawLine(
+                            TransformedLine.Start.GetX(),
+                            TransformedLine.Start.GetY(),
+                            TransformedLine.End.GetX(),
+                            TransformedLine.End.GetY(),
+                            Line.second);
+                    }
+
+                    Plot.first->TransientElements.Clear();
                 }
-                Plot.first->TransientLabels.clear();
             }
         }
     };

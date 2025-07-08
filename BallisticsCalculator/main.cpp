@@ -92,6 +92,8 @@ namespace
                 KineticEnergy,
                 TrajectoryDataPoints[DataPointSelectionIndex].T),
                 TrajectoryDataPoints[DataPointSelectionIndex].Position + 4.0f*CurvePointInfo.Normal, DarkGray);
+            TrajectoryPlot->AddTransientLine(TrajectoryDataPoints[DataPointSelectionIndex].Position, TrajectoryDataPoints[DataPointSelectionIndex].Position + 4.0f * CurvePointInfo.Tangent.Normalize(), Red);
+            TrajectoryPlot->AddTransientLine(TrajectoryDataPoints[DataPointSelectionIndex].Position, TrajectoryDataPoints[DataPointSelectionIndex].Position + 4.0f * CurvePointInfo.Normal.Normalize(), Red);
         }
 
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();
