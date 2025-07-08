@@ -37,7 +37,7 @@ namespace
             const float HalfHeight = 0.5f * PlotRange.Height();
             for (size_t nQ = 0; nQ < (TrajectoryDataPoints.size()/2); ++nQ)
             {
-                Curve.AddPoint(HalfWidth * (1.0f + cosf(Scale * nQ)), PlotRange.Min.GetY() + HalfHeight * (1.0f + sinf(Scale * nQ)));
+                Curve.AddPoint(HalfWidth * (1.0f + cosf(Scale * nQ)), PlotRange.Min.GetY() + HalfHeight * (1.0f + sinf(Scale * nQ)), std::numeric_limits<size_t>::max() );
             }
             Curve.SetColor(Red);
             TrajectoryPlot->AddCurve(std::move(Curve));
@@ -148,8 +148,11 @@ void AppUpdate()
 
 void AppHitDelegate(const Curve2D::PointInfo& PointInfo)
 {
-    SelectedCurvePointInfo = PointInfo;
-    bCurveSelected = true;
+    if (PointInfo.MetaDataTag!=std::numeric_limits<size_t>::max())
+    {
+        SelectedCurvePointInfo = PointInfo;
+        bCurveSelected = true;
+    }
 }
 #else
 int main(int /*argc*/, char** /*argv*/)

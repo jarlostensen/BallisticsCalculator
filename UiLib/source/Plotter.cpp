@@ -78,6 +78,57 @@ namespace Plotter
         TextBuffer.push_back({{Text, Position},Color});
     }
 
+    
+
+    void Curve2D::GetPointInfo(const Iterator& Iter, PointInfo& OutPointInfo)
+    {
+        const std::vector<Algebra::Vector2D>& Points = *Iter.Points;
+        OutPointInfo.Point = Points[Iter.nPos];
+        OutPointInfo.MetaDataTag = Iter->MetaDataTag;
+        Curves::CatmullRomSegment2D Segment;
+        float SampleT = 0.0f;
+        if (Iter.nPos > 0 && Iter.nPos <= (Points.size() - 3))
+        {
+            Segment.SetCoefficients(Points[Iter.nPos - 1], Points[Iter.nPos], Points[Iter.nPos + 1], Points[Iter.nPos + 2]);
+        }
+        else if (Iter.nPos == 0)
+        {
+            Segment.SetCoefficients(Points[Iter.nPos], Points[Iter.nPos], Points[Iter.nPos + 1], Points[Iter.nPos + 2]);
+        }
+        else if (Iter.nPos == Points.size()-1)
+        {
+            Segment.SetCoefficients(Points[Iter.nPos-2], Points[Iter.nPos-1], Points[Iter.nPos], Points[Iter.nPos]);
+            SampleT = 1.0f;
+        }
+        else
+        {
+            Segment.SetCoefficients(Points[Iter.nPos-1], Points[Iter.nPos], Points[Iter.nPos+1], Points[Iter.nPos+1]);
+            SampleT = 1.0f;
+        }
+        OutPointInfo.Normal = Segment.Normal(SampleT);
+        OutPointInfo.Tangent = Segment.Tangent(SampleT);
+    }
+
+    std::optional<Curve2D::Iterator> Plot::FindNearest(const Algebra::Vector2D& Point) const
+    {
+        Curve2D::Iterator Iter;
+        float MinDistanceSq = std::numeric_limits<float>::max();
+        for (const auto& Curve : Curves)
+        {
+            std::pair<Curve2D::Iterator, float> Found = Curve.FindNearest(Point);
+            if ( Found.second < MinDistanceSq )
+            {
+                Iter = Found.first;
+                MinDistanceSq = Found.second;
+            }
+        }
+        if (MinDistanceSq<std::numeric_limits<float>::max())
+        {
+            return {Iter};    
+        }
+        return std::nullopt;
+    }
+
     void SetRenderer(RendererPtr InRenderer)
     {
         RendererImpl = InRenderer;

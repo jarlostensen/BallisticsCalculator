@@ -225,7 +225,7 @@ namespace Plotter
             using reference = PointInfo&;
 
             Iterator() = default;
-            Iterator(const Iterator&) = default;
+            Iterator(const Iterator& Rhs) = default;
             
             Iterator& operator++()
             {
@@ -307,108 +307,7 @@ namespace Plotter
             return {{Points, PointMetaTags, MinIndex}, MinDistanceSq};
         }
 
-        static void GetPointInfo(const Iterator& Iter, PointInfo& OutPointInfo)
-        {
-            const std::vector<Algebra::Vector2D>& Points = *Iter.Points;
-            OutPointInfo.Point = Points[Iter.nPos];
-            OutPointInfo.MetaDataTag = Iter->MetaDataTag;
-            Curves::CatmullRomSegment2D Segment;
-            float SampleT = 0.0f;
-            if (Iter.nPos > 0 && Iter.nPos <= (Points.size() - 3))
-            {
-                Segment.SetCoefficients(Points[Iter.nPos - 1], Points[Iter.nPos], Points[Iter.nPos + 1], Points[Iter.nPos + 2]);
-            }
-            else if (Iter.nPos == 0)
-            {
-                Segment.SetCoefficients(Points[Iter.nPos], Points[Iter.nPos], Points[Iter.nPos + 1], Points[Iter.nPos + 2]);
-            }
-            else if (Iter.nPos == Points.size()-1)
-            {
-                Segment.SetCoefficients(Points[Iter.nPos-2], Points[Iter.nPos-1], Points[Iter.nPos], Points[Iter.nPos]);
-                SampleT = 1.0f;
-            }
-            else
-            {
-                Segment.SetCoefficients(Points[Iter.nPos-1], Points[Iter.nPos], Points[Iter.nPos+1], Points[Iter.nPos+1]);
-                SampleT = 1.0f;
-            }
-            OutPointInfo.Normal = Segment.Normal(SampleT);
-            OutPointInfo.Tangent = Segment.Tangent(SampleT);
-        }
-
-        bool GetNearestPointInfo(MetaDataTagType MetaDataTag, PointInfo& OutPointInfo) const
-        {
-            for (size_t nT = 0; nT < PointMetaTags.size(); nT++)
-            {
-                if (PointMetaTags[nT] == MetaDataTag)
-                {
-                    OutPointInfo.Point = Points[nT];
-                    OutPointInfo.MetaDataTag = MetaDataTag;
-                    Curves::CatmullRomSegment2D Segment;
-                    float SampleT = 0.0f;
-                    if (nT > 0 && nT <= (Points.size() - 3))
-                    {
-                        Segment.SetCoefficients(Points[nT - 1], Points[nT], Points[nT + 1], Points[nT + 2]);
-                    }
-                    else if (nT == 0)
-                    {
-                        Segment.SetCoefficients(Points[nT], Points[nT], Points[nT + 1], Points[nT + 2]);
-                    }
-                    else if (nT == (Points.size()-1))
-                    {
-                        Segment.SetCoefficients(Points[nT-2], Points[nT-1], Points[nT], Points[nT]);
-                        SampleT = 1.0f;
-                    }
-                    else
-                    {
-                        Segment.SetCoefficients(Points[nT - 1], Points[nT], Points[nT+1], Points[nT+1]);
-                        SampleT = 1.0f;
-                    }
-                    OutPointInfo.Normal = Segment.Normal(SampleT);
-                    OutPointInfo.Tangent = Segment.Tangent(SampleT);
-                    return true;
-                }
-            }
-            return false;
-        }
-        
-        void GetNearestPointInfo(Algebra::Vector2D& ProbePoint, PointInfo& OutPointInfo) const
-        {
-            Algebra::Vector2D ClosestPoint = { std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
-            float ClosestDistanceSq = std::numeric_limits<float>::max();
-            size_t ClosestPointIndex = 0;
-            size_t PointIndex = 0;
-            for (const auto& Point : Points)
-            {
-                const float DistanceSq = (ProbePoint - Point).LengthSq();
-                if (DistanceSq < ClosestDistanceSq)
-                {
-                    ClosestPoint = Point;
-                    ClosestPointIndex = PointIndex++;
-                    ClosestDistanceSq = DistanceSq;
-                }
-            }
-            GetNearestPointInfo(PointMetaTags[ClosestPointIndex], OutPointInfo);
-        }
-
-        std::pair<Algebra::Vector2D, MetaDataTagType> GetNearestPoint(Algebra::Vector2D& ProbePoint) const
-        {
-            Algebra::Vector2D ClosestPoint = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
-            float ClosestDistanceSq = std::numeric_limits<float>::max();
-            size_t ClosestPointIndex = 0;
-            size_t PointIndex = 0;
-            for ( const auto& Point : Points )
-            {
-                const float DistanceSq = (ProbePoint - Point).LengthSq();
-                if (DistanceSq < ClosestDistanceSq)
-                {
-                    ClosestPoint = Point;
-                    ClosestPointIndex = PointIndex++;
-                    ClosestDistanceSq = DistanceSq;
-                }
-            }
-            return {ClosestPoint, PointMetaTags[ClosestPointIndex]};
-        }
+        static void GetPointInfo(const Iterator& Iter, PointInfo& OutPointInfo);
 
     private:
         std::vector<Algebra::Vector2D> Points;
@@ -510,25 +409,7 @@ namespace Plotter
             return Extents;
         }
 
-        std::optional<Curve2D::Iterator> FindNearest(const Algebra::Vector2D& Point) const
-        {
-            Curve2D::Iterator Iter;
-            float MinDistanceSq = std::numeric_limits<float>::max();
-            for (const auto& Curve : Curves)
-            {
-                std::pair<Curve2D::Iterator, float> Found = Curve.FindNearest(Point);
-                if ( Found.second < MinDistanceSq )
-                {
-                    Iter = Found.first;
-                    MinDistanceSq = Found.second;
-                }
-            }
-            if (MinDistanceSq<std::numeric_limits<float>::max())
-            {
-                return {Iter};    
-            }
-            return std::nullopt;
-        }
+        std::optional<Curve2D::Iterator> FindNearest(const Algebra::Vector2D& Point) const;
     };
 
     /**
