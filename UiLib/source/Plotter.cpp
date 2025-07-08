@@ -1,7 +1,5 @@
 ﻿#include "Plotter.h"
-
 #include <cassert>
-
 #include "Curves.h"
 
 namespace 
@@ -115,9 +113,13 @@ namespace Plotter
             FromViewport(Transform, Plot.second, ViewportPosition, Position);
             if ( Plot.first->GetExtents().IsPointInside(Position) )
             {
-                Curve2D::PointInfo PointInfo;
-                Plot.first->GetNearestPointInfo(Position,PointInfo);
-                ViewportPointInPlotDelegate(PointInfo);
+                std::optional<Curve2D::Iterator> Found = Plot.first->FindNearest(Position);
+                if ( Found )
+                {
+                    Curve2D::PointInfo PointInfo;
+                    Curve2D::GetPointInfo(Found.value(), PointInfo);
+                    ViewportPointInPlotDelegate(PointInfo);
+                }
             }
         }
         return {};

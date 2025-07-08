@@ -184,6 +184,7 @@ namespace Plotter
             Extents.Update(Point.GetX(), Point.GetY());
         }
 
+        
         /**
          * @struct PointInfo
          * @brief Represents detailed information about a point in a 2D curve.
@@ -198,6 +199,142 @@ namespace Plotter
             Algebra::Vector2D Tangent;
             MetaDataTagType MetaDataTag;
         };
+
+        struct PointIterInfo
+        {
+            Algebra::Vector2D Point;
+            MetaDataTagType MetaDataTag;
+        };
+
+        class Iterator
+        {
+            friend class Curve2D;
+            Iterator(const std::vector<Algebra::Vector2D>& points, const std::vector<MetaDataTagType>& metadata, size_t pos)
+                : Points(&points)
+                , MetaData(&metadata)
+                , nPos(pos)
+            {
+                Current.Point = (*Points)[nPos];
+                Current.MetaDataTag = (*MetaData)[nPos];
+            }
+        public:
+            using iterator_category = std::forward_iterator_tag;
+            using value_type = PointInfo;
+            using difference_type = std::ptrdiff_t;
+            using pointer = PointInfo*;
+            using reference = PointInfo&;
+
+            Iterator() = default;
+            Iterator(const Iterator&) = default;
+            
+            Iterator& operator++()
+            {
+                ++nPos;
+                if (nPos < (*Points).size())
+                {
+                    Current.Point = (*Points)[nPos];
+                    Current.MetaDataTag = (*MetaData)[nPos];
+                }
+                return *this;
+            }
+
+            Iterator operator++(int)
+            {
+                Iterator tmp = *this;
+                ++(*this);
+                return tmp;
+            }
+
+            bool operator==(const Iterator& other) const
+            {
+                return nPos == other.nPos && Points == other.Points;
+            }
+
+            bool operator!=(const Iterator& other) const {
+                return !(*this == other);
+            }
+
+            const PointIterInfo& operator*() const {
+                return Current;
+            }
+
+            const PointIterInfo* operator->() const {
+                return &Current;
+            }
+
+        private:
+            const std::vector<Algebra::Vector2D>* Points;
+            const std::vector<MetaDataTagType>* MetaData;
+            size_t nPos;
+            PointIterInfo Current;
+        };
+
+        Iterator begin() const
+        {
+            return {Points, PointMetaTags, 0};
+        }
+
+        Iterator end() const
+        {
+            return {Points, PointMetaTags, Points.size()};
+        }
+
+        Iterator Find(MetaDataTagType MetaDataTag) const
+        {
+            for (size_t nT = 0; nT < Points.size(); nT++)
+            {
+                if (PointMetaTags[nT] == MetaDataTag)
+                {
+                    return {Points, PointMetaTags, nT};
+                }
+            }
+            return end();
+        }
+
+        std::pair<Iterator, float> FindNearest(const Algebra::Vector2D& Point) const
+        {
+            float MinDistanceSq = std::numeric_limits<float>::max();
+            size_t MinIndex = 0;
+            for (size_t nT = 0; nT < Points.size(); nT++)
+            {
+                const float DistanceSq = (Point - Points[nT]).LengthSq();
+                if (DistanceSq < MinDistanceSq)
+                {
+                    MinDistanceSq = DistanceSq;
+                    MinIndex = nT;
+                }
+            }
+            return {{Points, PointMetaTags, MinIndex}, MinDistanceSq};
+        }
+
+        static void GetPointInfo(const Iterator& Iter, PointInfo& OutPointInfo)
+        {
+            const std::vector<Algebra::Vector2D>& Points = *Iter.Points;
+            OutPointInfo.Point = Points[Iter.nPos];
+            OutPointInfo.MetaDataTag = Iter->MetaDataTag;
+            Curves::CatmullRomSegment2D Segment;
+            float SampleT = 0.0f;
+            if (Iter.nPos > 0 && Iter.nPos <= (Points.size() - 3))
+            {
+                Segment.SetCoefficients(Points[Iter.nPos - 1], Points[Iter.nPos], Points[Iter.nPos + 1], Points[Iter.nPos + 2]);
+            }
+            else if (Iter.nPos == 0)
+            {
+                Segment.SetCoefficients(Points[Iter.nPos], Points[Iter.nPos], Points[Iter.nPos + 1], Points[Iter.nPos + 2]);
+            }
+            else if (Iter.nPos == Points.size()-1)
+            {
+                Segment.SetCoefficients(Points[Iter.nPos-2], Points[Iter.nPos-1], Points[Iter.nPos], Points[Iter.nPos]);
+                SampleT = 1.0f;
+            }
+            else
+            {
+                Segment.SetCoefficients(Points[Iter.nPos-1], Points[Iter.nPos], Points[Iter.nPos+1], Points[Iter.nPos+1]);
+                SampleT = 1.0f;
+            }
+            OutPointInfo.Normal = Segment.Normal(SampleT);
+            OutPointInfo.Tangent = Segment.Tangent(SampleT);
+        }
 
         bool GetNearestPointInfo(MetaDataTagType MetaDataTag, PointInfo& OutPointInfo) const
         {
@@ -373,39 +510,24 @@ namespace Plotter
             return Extents;
         }
 
-        std::pair<Algebra::Vector2D, Curve2D::MetaDataTagType> GetNearestPoint(Algebra::Vector2D& ProbePoint) const
+        std::optional<Curve2D::Iterator> FindNearest(const Algebra::Vector2D& Point) const
         {
+            Curve2D::Iterator Iter;
+            float MinDistanceSq = std::numeric_limits<float>::max();
             for (const auto& Curve : Curves)
             {
-                if (Curve.Extents.IsPointInside(ProbePoint))
+                std::pair<Curve2D::Iterator, float> Found = Curve.FindNearest(Point);
+                if ( Found.second < MinDistanceSq )
                 {
-                    return Curve.GetNearestPoint(ProbePoint);
+                    Iter = Found.first;
+                    MinDistanceSq = Found.second;
                 }
             }
-            return {};
-        }
-
-        void GetNearestPointInfo(Algebra::Vector2D& ProbePoint, Curve2D::PointInfo& OutPointInfo) const
-        {
-            for (const auto& Curve : Curves)
+            if (MinDistanceSq<std::numeric_limits<float>::max())
             {
-                if (Curve.Extents.IsPointInside(ProbePoint))
-                {
-                    Curve.GetNearestPointInfo(ProbePoint, OutPointInfo);
-                }
+                return {Iter};    
             }
-        }
-
-        bool GetNearestPointInfo(Curve2D::MetaDataTagType MetaDataTag, Curve2D::PointInfo& OutPointInfo) const
-        {
-            for (const auto& Curve : Curves)
-            {
-                if ( Curve.GetNearestPointInfo(MetaDataTag, OutPointInfo) )
-                {
-                    return true;
-                }
-            }
-            return false;
+            return std::nullopt;
         }
     };
 
