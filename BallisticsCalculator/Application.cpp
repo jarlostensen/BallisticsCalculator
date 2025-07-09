@@ -1,15 +1,29 @@
 ﻿
 #include "Application.h"
+#include "Plotter.h"
 #include <vector>
-#define SDL_MAIN_USE_CALLBACKS 1  /* use the callbacks instead of main() */
+
 #include <sstream>
-#include <SDL3/SDL_main.h>
+//#include <SDL3/SDL_main.h>
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
 using namespace Plotter;
-namespace
+namespace Application
 {
+    OnMouseMoveDelegateType OnMouseMoveDelegate;
+    OnAppUpdateDelegateType OnAppUpdateDelegate;
+
+    void SetMouseMoveDelegate(OnMouseMoveDelegateType&& InOnMouseMoveDelegate)
+    {
+        OnMouseMoveDelegate = std::move(InOnMouseMoveDelegate);
+    }
+
+    void SetAppUpdateDelegate(OnAppUpdateDelegateType&& InOnAppUpdateDelegate)
+    {
+        OnAppUpdateDelegate = std::move(InOnAppUpdateDelegate);
+    }
+    
     SDL_Window* SdlWindow = NULL;
     SDL_Renderer* SdlRenderer = NULL;
     TTF_Font* SdlFont = nullptr;
@@ -68,21 +82,24 @@ namespace
         }
     };
 
-    SDL_AppResult SdlInit(void** appstate, int argc, char* argv[])
+    bool Init()
     {
-        (void)appstate;
-        (void)argc;
-        (void)argv;
+        if ( !SDL_Init(SDL_INIT_VIDEO) )
+        {
+            SDL_Log("SDL could not initialize! SDL Error: %s\n", SDL_GetError());
+            return false;
+        }
+        
         if (!SDL_CreateWindowAndRenderer("Ballistics Calculator", 
             static_cast<int>(ViewportExtents.Width()), static_cast<int>(ViewportExtents.Height()), 
             SDL_WINDOW_RESIZABLE, &SdlWindow, &SdlRenderer)) {
             SDL_Log("Couldn't create window and renderer: %s", SDL_GetError());
-            return SDL_APP_FAILURE;
+            return false;
         }
 
         if (!TTF_Init()) {
             SDL_Log("SDL_ttf could not initialize! SDL_ttf Error: %s\n", SDL_GetError());
-            return SDL_APP_FAILURE;
+            return false;
         }
 
         SDL_SetRenderDrawColor(SdlRenderer, 255, 255, 255, 255);
@@ -91,6 +108,7 @@ namespace
         if ( (SdlFont = TTF_OpenFont(R"(C:\Windows\Fonts\Arial.ttf)", 12))==nullptr )
         {
             SDL_Log("Failed to load font: SDL_Ttf error: %s\n", SDL_GetError());
+            return false;
         }
 
         SetRenderer(std::make_shared<SdlRendererImpl>());
@@ -99,77 +117,85 @@ namespace
         SDL_GetRenderOutputSize(SdlRenderer, &ViewportWidth, &ViewportHeight);
         ViewportExtents.Max.SetX( static_cast<float>(ViewportWidth) );
         ViewportExtents.Max.SetY( static_cast<float>(ViewportHeight) );
-        AppInit();
-
-        return SDL_APP_CONTINUE;
+        
+        return true;
     }
 
-    SDL_AppResult SdlAppEvent(void* /*appstate*/, SDL_Event* event)
+    // SDL_AppResult SdlAppEvent(void* /*appstate*/, SDL_Event* event)
+    // {
+    //     if (event->type == SDL_EVENT_KEY_DOWN ||
+    //     event->type == SDL_EVENT_QUIT) {
+    //         return SDL_APP_SUCCESS;
+    //     }
+    //     switch (event->type)
+    //     {
+    //     case  SDL_EVENT_WINDOW_RESIZED:
+    //         {
+    //             int ViewportWidth;
+    //             int ViewportHeight;
+    //             SDL_GetRenderOutputSize(SdlRenderer, &ViewportWidth, &ViewportHeight);
+    //             ViewportExtents.Max.SetX( static_cast<float>(ViewportWidth) );
+    //             ViewportExtents.Max.SetY( static_cast<float>(ViewportHeight) );
+    //         }
+    //         break;
+    //     case SDL_EVENT_MOUSE_BUTTON_DOWN:
+    //     case SDL_EVENT_MOUSE_BUTTON_UP:
+    //     case SDL_EVENT_MOUSE_MOTION:
+    //         {
+    //             OnMouseMoveDelegate({event->motion.x,event->motion.y});
+    //         }
+    //         break;
+    //     default:;
+    //     }
+    //     return SDL_APP_CONTINUE;
+    // }
+
+    void Run()
     {
-        if (event->type == SDL_EVENT_KEY_DOWN ||
-        event->type == SDL_EVENT_QUIT) {
-            return SDL_APP_SUCCESS;
-        }
-        switch (event->type)
+        bool bRunning = true;
+        while (bRunning)
         {
-        case  SDL_EVENT_WINDOW_RESIZED:
+            SDL_Event Event;
+            while (SDL_PollEvent(&Event))
             {
-                int ViewportWidth;
-                int ViewportHeight;
-                SDL_GetRenderOutputSize(SdlRenderer, &ViewportWidth, &ViewportHeight);
-                ViewportExtents.Max.SetX( static_cast<float>(ViewportWidth) );
-                ViewportExtents.Max.SetY( static_cast<float>(ViewportHeight) );
-            }
-            break;
-        case SDL_EVENT_MOUSE_BUTTON_DOWN:
-        case SDL_EVENT_MOUSE_BUTTON_UP:
-        case SDL_EVENT_MOUSE_MOTION:
-            {
-                PlotPtr Plot = ViewportPointInPlot({event->motion.x,event->motion.y}, [](const Curve2D::PointInfo& PointInfo)
+                switch (Event.type)
                 {
-                    AppHitDelegate(PointInfo);
-                });
+                case SDL_EVENT_QUIT:
+                    bRunning = false;
+                    break;
+                case  SDL_EVENT_WINDOW_RESIZED:
+                    {
+                        int ViewportWidth;
+                        int ViewportHeight;
+                        SDL_GetRenderOutputSize(SdlRenderer, &ViewportWidth, &ViewportHeight);
+                        ViewportExtents.Max.SetX( static_cast<float>(ViewportWidth) );
+                        ViewportExtents.Max.SetY( static_cast<float>(ViewportHeight) );
+                    }
+                    break;
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                case SDL_EVENT_MOUSE_BUTTON_UP:
+                case SDL_EVENT_MOUSE_MOTION:
+                    {
+                        OnMouseMoveDelegate({Event.motion.x,Event.motion.y});
+                    }
+                    break;
+                default:;
+                }
+                
+                SDL_SetRenderDrawColor(SdlRenderer, 255, 255, 255, 255);
+                SDL_RenderClear(SdlRenderer);
+    
+                SDL_SetRenderDrawColor(SdlRenderer, 64, 64, 64, 255);
+                BeginFrame();
+                if (Application::OnAppUpdateDelegate)
+                {
+                    Application::OnAppUpdateDelegate();
+                }
+                RenderFrame();
+                EndFrame();
+    
+                SDL_RenderPresent(SdlRenderer);
             }
-            break;
-        default:;
         }
-        return SDL_APP_CONTINUE;
     }
 }
-
-using namespace Renderer;
-
-SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
-{
-    return SdlInit(appstate, argc, argv);
-}
-
-SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
-{
-    return SdlAppEvent(appstate, event);   
-}
-
-SDL_AppResult SDL_AppIterate(void* /*appstate*/)
-{
-    SDL_SetRenderDrawColor(SdlRenderer, 255, 255, 255, 255);
-    SDL_RenderClear(SdlRenderer);
-    
-    SDL_SetRenderDrawColor(SdlRenderer, 64, 64, 64, 255);
-    BeginFrame();
-    AppUpdate();
-    RenderFrame();
-    EndFrame();
-    
-    //SDL_SetRenderDrawColor(SdlRenderer, 128, 128, 128, 255);
-    //RenderLines();
-    //RenderText();
-    
-    SDL_RenderPresent(SdlRenderer);
-    
-    return SDL_APP_CONTINUE;
-}
-
-void SDL_AppQuit(void* /*appstate*/, SDL_AppResult /*result*/)
-{
-}
-    

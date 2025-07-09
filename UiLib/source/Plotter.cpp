@@ -109,17 +109,21 @@ namespace Plotter
         OutPointInfo.Tangent = Segment.Tangent(SampleT);
     }
 
-    std::optional<Curve2D::Iterator> Plot::FindNearest(const Algebra::Vector2D& Point) const
+    std::optional<Curve2D::Iterator> Plot::FindNearest(const Algebra::Vector2D& Point, MetaDataTagType MetaDataTagFilter) const
     {
         Curve2D::Iterator Iter;
         float MinDistanceSq = std::numeric_limits<float>::max();
-        for (const auto& Curve : Curves)
+        for (int nCurve = 0; nCurve < Curves.size(); ++nCurve)
         {
-            std::pair<Curve2D::Iterator, float> Found = Curve.FindNearest(Point);
-            if ( Found.second < MinDistanceSq )
+            if (MetaDataTagFilter == NullMetaDataTag || CurveMetaTags[nCurve]==MetaDataTagFilter)
             {
-                Iter = Found.first;
-                MinDistanceSq = Found.second;
+                const Curve2D& Curve = Curves[nCurve];
+                std::pair<Curve2D::Iterator, float> Found = Curve.FindNearest(Point);
+                if ( Found.second < MinDistanceSq )
+                {
+                    Iter = Found.first;
+                    MinDistanceSq = Found.second;
+                }
             }
         }
         if (MinDistanceSq<std::numeric_limits<float>::max())
@@ -150,7 +154,9 @@ namespace Plotter
         return MaximalDataRange;   
     }
 
-    PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition, ViewportPointInPlotDelegateType&& ViewportPointInPlotDelegate)
+    PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition,
+        MetaDataTagType MetaDataTag,
+        ViewportPointInPlotDelegateType&& ViewportPointInPlotDelegate)
     {
         if (GetPlotRange().IsEmpty())
         {
@@ -164,8 +170,8 @@ namespace Plotter
             FromViewport(Transform, Plot.second, ViewportPosition, Position);
             if ( Plot.first->GetExtents().IsPointInside(Position) )
             {
-                std::optional<Curve2D::Iterator> Found = Plot.first->FindNearest(Position);
-                if ( Found )
+                //TODO: caller needs to select meta tag 
+                if ( std::optional<Curve2D::Iterator> Found = Plot.first->FindNearest(Position, MetaDataTag) )
                 {
                     Curve2D::PointInfo PointInfo;
                     Curve2D::GetPointInfo(Found.value(), PointInfo);

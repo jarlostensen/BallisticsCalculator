@@ -1,6 +1,14 @@
 ﻿#pragma once
-#include "Plotter.h"
+#include "Algebra.h"
+#include <functional>
+#include <memory>
 
-extern void AppInit();
-extern void AppUpdate();
-extern void AppHitDelegate(const Plotter::Curve2D::PointInfo&);
+namespace Application
+{
+    using OnMouseMoveDelegateType = std::function<void(const Algebra::Vector2D&)>;
+    using OnAppUpdateDelegateType = std::function<void()>;
+    void SetMouseMoveDelegate(OnMouseMoveDelegateType&& OnMouseMoveDelegate);
+    void SetAppUpdateDelegate(OnAppUpdateDelegateType&& OnAppUpdateDelegate);
+    bool Init();
+    void Run();
+}

@@ -142,9 +142,8 @@ namespace Curves
     T TCatmullRomSegment<T>::Normal(float t) const requires (HasDotProduct<T>)
     {
         const T CurvatureAt = Curvature(t);
-        const T TangentAt = Tangent(t);
-        const float Normalization = CurvatureAt.Dot(TangentAt) / TangentAt.LengthSq(); 
-        return CurvatureAt - Normalization * TangentAt;
+        T TangentAt = Tangent(t);
+        return CurvatureAt - CurvatureAt.Dot(TangentAt) * TangentAt.Normalize();
     }
     template<typename T>
     T TCatmullRomSegment<T>::Normal(float t) const requires (!HasDotProduct<T>)

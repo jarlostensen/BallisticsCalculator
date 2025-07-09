@@ -142,7 +142,9 @@ namespace Plotter
 
     class Plot;
     using PlotPtr = std::shared_ptr<Plot>;
-
+    using MetaDataTagType = uintptr_t;
+    constexpr MetaDataTagType NullMetaDataTag = std::numeric_limits<MetaDataTagType>::max();
+    
     /**
      * @struct Curve2D
      * @brief Represents a 2D curve defined by a collection of points, color, and its extents.
@@ -153,7 +155,6 @@ namespace Plotter
     class Curve2D
     {
     public:
-        using MetaDataTagType = uintptr_t;
         Curve2D()
         {
             Extents = EmptyRange2D;
@@ -177,7 +178,7 @@ namespace Plotter
             Extents.Update(x,y);
         }
 
-        void AddPoint(const Algebra::Vector2D& Point, MetaDataTagType MetaDataTag = 0)
+        void AddPoint(const Algebra::Vector2D& Point, MetaDataTagType MetaDataTag = NullMetaDataTag)
         {
             Points.emplace_back(Point);
             PointMetaTags.push_back(MetaDataTag);
@@ -330,6 +331,7 @@ namespace Plotter
     class Plot
     {
         std::vector<Curve2D> Curves;
+        std::vector<MetaDataTagType> CurveMetaTags;
         std::vector<std::pair<Label2D, ColorRGB>> Labels;
         std::vector<std::pair<Line2D, ColorRGB>> Lines;
         struct
@@ -346,8 +348,7 @@ namespace Plotter
                 return !Labels.empty() || !Lines.empty();
             }
         } TransientElements;
-
-        Algebra::Vector2D SelectedPoint;
+        
         Range2D Extents;
 
         struct PlotPrivate
@@ -359,6 +360,8 @@ namespace Plotter
     public:
         Plot(PlotPrivate&&)
         {
+            Curves.reserve(2);
+            CurveMetaTags.reserve(2);
             Extents = EmptyRange2D;
         }
         
@@ -367,16 +370,18 @@ namespace Plotter
             return std::make_shared<Plot>(PlotPrivate{});
         }
 
-        void AddCurve(const Curve2D& Curve)
+        void AddCurve(const Curve2D& Curve, MetaDataTagType MetaDataTag=NullMetaDataTag)
         {
             Curves.push_back(Curve);
+            CurveMetaTags.push_back(MetaDataTag);
             Extents |= Curve.Extents;
         }
 
-        void AddCurve(Curve2D&& Curve)
+        void AddCurve(Curve2D&& Curve, MetaDataTagType MetaDataTag=NullMetaDataTag)
         {
             Extents |= Curve.Extents;
             Curves.push_back(std::forward<Curve2D>(Curve));
+            CurveMetaTags.push_back(MetaDataTag);
         }
 
         void AddLabel(const std::string& String, const Algebra::Vector2D& Position, ColorRGB Color=Black)
@@ -409,7 +414,7 @@ namespace Plotter
             return Extents;
         }
 
-        std::optional<Curve2D::Iterator> FindNearest(const Algebra::Vector2D& Point) const;
+        std::optional<Curve2D::Iterator> FindNearest(const Algebra::Vector2D& Point, MetaDataTagType MetaDataTagFilter) const;
     };
 
     /**
@@ -448,6 +453,6 @@ namespace Plotter
     Range2D GetPlotRange();
 
     using ViewportPointInPlotDelegateType = std::function<void(const Curve2D::PointInfo& PointInfo)>;
-    PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition, ViewportPointInPlotDelegateType&& ViewportPointInPlotDelegate);
+    PlotPtr ViewportPointInPlot(const Algebra::Vector2D& ViewportPosition, MetaDataTagType MetaDataTag, ViewportPointInPlotDelegateType&& ViewportPointInPlotDelegate);
     
 }

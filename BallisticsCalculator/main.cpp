@@ -4,6 +4,7 @@
 #include <iomanip>
 
 #include "Application.h"
+#include "Plotter.h"
 
 #include "Ballistics.h"
 
@@ -29,7 +30,7 @@ namespace
                 Curve.AddPoint(TrajectoryDataPoints[nQ].Position.GetX(), TrajectoryDataPoints[nQ].Position.GetY(), nQ);
             }
             Curve.SetColor(Magenta);
-            TrajectoryPlot->AddCurve(std::move(Curve));
+            TrajectoryPlot->AddCurve(std::move(Curve), 1);
             Range2D PlotRange = TrajectoryPlot->GetExtents();
 
             const float Scale = 2.0f*static_cast<float>(std::numbers::pi) / TrajectoryDataPoints.size();
@@ -40,7 +41,7 @@ namespace
                 Curve.AddPoint(HalfWidth * (1.0f + cosf(Scale * nQ)), PlotRange.Min.GetY() + HalfHeight * (1.0f + sinf(Scale * nQ)), std::numeric_limits<size_t>::max() );
             }
             Curve.SetColor(Red);
-            TrajectoryPlot->AddCurve(std::move(Curve));
+            TrajectoryPlot->AddCurve(std::move(Curve), 2);
             PlotRange = TrajectoryPlot->GetExtents();
 
             const float CurveHeight = PlotRange.Height();
@@ -95,6 +96,8 @@ namespace
                 DarkGray);
             TrajectoryPlot->AddTransientLine(TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position,
                 TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position + Tangent, Blue);
+            TrajectoryPlot->AddTransientLine(TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position,
+                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position + 0.05f*Normal, Blue);
         }
 
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();
@@ -135,29 +138,27 @@ namespace
 
 }
 
-#ifdef WITH_SDL
-void AppInit()
-{
-    Solve();
-}
-
-void AppUpdate()
-{
-    DrawUi();
-}
-
-void AppHitDelegate(const Curve2D::PointInfo& PointInfo)
-{
-    if (PointInfo.MetaDataTag!=std::numeric_limits<size_t>::max())
-    {
-        SelectedCurvePointInfo = PointInfo;
-        bCurveSelected = true;
-    }
-}
-#else
 int main(int /*argc*/, char** /*argv*/)
 {
     Solve();
+#ifdef WITH_SDL
+    Application::SetAppUpdateDelegate([]()
+    {
+        DrawUi();
+    });
+    Application::SetMouseMoveDelegate([](const Algebra::Vector2D& Point)
+    {
+        PlotPtr Plot = ViewportPointInPlot(Point, 1, [](const Curve2D::PointInfo& PointInfo)
+        {
+            SelectedCurvePointInfo = PointInfo;
+            bCurveSelected = true;
+        });
+    });
+    if ( Application::Init() )
+    {
+        Application::Run();
+        //Application::Shutdown();
+    }
+#endif
     return 0;
 }
-#endif
