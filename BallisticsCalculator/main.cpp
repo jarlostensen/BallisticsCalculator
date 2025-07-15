@@ -74,10 +74,10 @@ namespace
             }
         }
         
-        DrawText(std::format("Muzzle velocity is {:.1f}m/s", BulletData.MuzzleVelocityMs), {10.f, 25.f});
+        DrawText(std::format("Muzzle velocity is {:.1f}m/s", FiringData.MuzzleVelocityMs), {10.f, 25.f});
         DrawText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
         DrawText(std::format("Calibre {:.2f}mm, bullet weight {} grains", FiringData.Bullet.CallibreMm, static_cast<int>(FiringData.Bullet.MassGr)), { 200.0f, 25.0f });
-        DrawText(std::format("Temperature {:.1f} Celcius", Ballistics::KelvinToCelcius(Environment.TKelvin)), {200.0f, 40.0f});
+        DrawText(std::format("Temperature {:.1f} Celsius", Ballistics::KelvinToCelcius(Environment.TKelvin)), {200.0f, 40.0f});
         
         if ( bCurveSelected )
         {
@@ -110,7 +110,6 @@ namespace
         BulletData.MassGr = 155.0f;
         BulletData.G1BC = 0.29f;
         BulletData.G7BC = 0.275f;
-        BulletData.MuzzleVelocityMs = 871.42f;
         BulletData.CallibreMm = Ballistics::Callibre308Mm;
 
         Environment.Gravity = -9.81f;
@@ -121,6 +120,7 @@ namespace
         FiringData.Bullet = BulletData;
         FiringData.Height = 1.0f;
         FiringData.ZeroDistance = 200.0f;
+        FiringData.MuzzleVelocityMs = 871.42f;
         // roughly one inch at 100m etc
         const float ToleranceM = (2.0f * (FiringData.ZeroDistance * 0.01f)) / 100.0f;
 

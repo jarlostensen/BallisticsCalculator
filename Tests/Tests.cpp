@@ -87,7 +87,6 @@ namespace
 
         BulletData.MassGr = 155.0f;
         BulletData.G7BC = 0.275f;
-        BulletData.MuzzleVelocityMs = 871.42f;
         BulletData.CallibreMm = Ballistics::Callibre308Mm;
 
         Environment.Gravity = -9.81f;
@@ -98,6 +97,7 @@ namespace
         FiringData.Bullet = BulletData;
         FiringData.Height = 10.0f;
         FiringData.ZeroDistance = 200.0f;
+        FiringData.MuzzleVelocityMs = 871.42f;
 
         // roughly one inch at 100m etc
         const float ToleranceM = (2.0f * (FiringData.ZeroDistance * 0.01f)) / 100.0f;
