@@ -8,13 +8,15 @@ namespace
 {
     void TestCatmullRom()
     {
-        Curves::CatmullRomSegment1D Segment(-1.0f, 0.0f, 1.0f, 2.0f);
+        constexpr Curves::CatmullRomSegment1D Segment(-1.0f, 0.0f, 1.0f, 2.0f);
 
         float t = 0.0f;
         assert(Segment(0.0f) == 0.0f);
         assert(Segment(1.0f) == 1.0f);
         assert(Segment(0.5f) == 0.5f);
-
+        static_assert(Segment.Curvature(0.0f) == 0.0f);
+        static_assert(Segment.Curvature(1.0f) == 0.0f);
+        
         std::vector<float> Samples;
         Segment.SampleAdaptively(Samples, 0.0f, 1.0f, 0.01f);
         assert(Samples.size() == 2);
@@ -26,10 +28,10 @@ namespace
         assert(MathLib::NearlyEqual(Samples[0], 0.0f));
         //assert(MathLib::NearlyEqual(Samples[1], 1.0f));
 
-        const Algebra::Vector2D P0 = {cosf(0.0f), sinf(0.0f)};
-        const Algebra::Vector2D P1 = { cosf(static_cast<float>(std::numbers::pi)/8.0f), sinf(static_cast<float>(std::numbers::pi)/8.0f)};
-        const Algebra::Vector2D P2 = { cosf(static_cast<float>(std::numbers::pi)*3.0f/8.0f), sinf(static_cast<float>(std::numbers::pi)*3.0f/8.0f)};
-        const Algebra::Vector2D P3 = { cosf(static_cast<float>(std::numbers::pi)/2.0f), sinf(static_cast<float>(std::numbers::pi)/2.0f) };
+        const Algebra::Vector2D P0{cosf(0.0f), sinf(0.0f)};
+        const Algebra::Vector2D P1{ cosf(static_cast<float>(std::numbers::pi)/8.0f), sinf(static_cast<float>(std::numbers::pi)/8.0f)};
+        const Algebra::Vector2D P2{ cosf(static_cast<float>(std::numbers::pi)*3.0f/8.0f), sinf(static_cast<float>(std::numbers::pi)*3.0f/8.0f)};
+        const Algebra::Vector2D P3{ cosf(static_cast<float>(std::numbers::pi)/2.0f), sinf(static_cast<float>(std::numbers::pi)/2.0f) };
         Curves::CatmullRomSegment2D SinSegment(P0,P1,P2,P3);
         std::vector<Algebra::Vector2D> Samples2D;
         SinSegment.SampleAdaptively(Samples2D, 0.0f, 1.0f, 0.01f);
@@ -43,7 +45,7 @@ namespace
         assert(Samples2DFwdDiff[0].NearlyEqual(P1));
         //assert(Samples2DFwdDiff[Samples2DFwdDiff.size() - 1].NearlyEqual(P2));
 
-        for (float t = 0.0f; t < 1.0f; t += 0.01f)
+        for (t = 0.0f; t < 1.0f; t += 0.01f)
         {
             Algebra::Vector2D Normal = SinSegment.Normal(t).Normalize();
             Algebra::Vector2D Tangent = SinSegment.Tangent(t).Normalize();
@@ -83,17 +85,23 @@ namespace
 
     void TestAlgebra()
     {
-        Algebra::Matrix2D M1 = Algebra::Matrix2D::Rotation(std::numbers::pi / 4.0f);
+        constexpr Algebra::Matrix2D UnitMatrix;
+        static_assert(UnitMatrix.Determinant() == 1.0f);
+
+        constexpr Algebra::Vector2D UnitVector(1.0f, 0.0f);
+        static_assert(UnitVector.LengthSq()==1.0f);
+        
+        Algebra::Matrix2D M1 = Algebra::Matrix2D::Rotation(static_cast<float>(std::numbers::pi) / 4.0f);
         std::optional<Algebra::Matrix2D> M1Inv = M1.Inverse();
         assert(M1Inv.has_value());
         Algebra::Matrix2D M2 = M1 * M1Inv.value();
         assert(M2.Determinant() == 1.0f);
-        Algebra::Vector2D UnitVectorX(1.0f, 0.0f);
-        Algebra::Vector2D UnitVectorY(1.0f, 0.0f);
-        Algebra::Vector2D RotatedUnitVectorX = M1 * UnitVectorX;
+        constexpr Algebra::Vector2D UnitVectorX(1.0f, 0.0f);
+        constexpr Algebra::Vector2D UnitVectorY(1.0f, 0.0f);
+        const Algebra::Vector2D RotatedUnitVectorX = M1 * UnitVectorX;
         assert(MathLib::NearlyEqual(RotatedUnitVectorX.LengthSq(), 1.0f));
         assert(MathLib::NearlyEqual(RotatedUnitVectorX.GetX(), RotatedUnitVectorX.GetY()));
-        Algebra::Vector2D RotatedUnitVectorY = M1 * UnitVectorY;
+        const Algebra::Vector2D RotatedUnitVectorY = M1 * UnitVectorY;
         assert(MathLib::NearlyEqual(RotatedUnitVectorY.LengthSq(), 1.0f));
         assert(MathLib::NearlyEqual(RotatedUnitVectorY.GetX(), RotatedUnitVectorY.GetY()));
     }

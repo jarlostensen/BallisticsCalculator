@@ -22,9 +22,12 @@ namespace Curves
     struct TCatmullRomSegment
     {
         TCatmullRomSegment() = default;
-        TCatmullRomSegment(T P0, T P1, T P2, T P3)
+        constexpr TCatmullRomSegment(T P0, T P1, T P2, T P3)
         {
-            SetCoefficients(P0, P1, P2, P3);
+            H0 = 2.0f * P1;
+            H1 = (P2 - P0);
+            H2 = (2.0f * P0 - 5.0f * P1 + 4.0f * P2 - P3);
+            H3 = (-P0 + 3.0f * P1 - 3.0f * P2 + P3);
         }
         TCatmullRomSegment(const TCatmullRomSegment& Rhs)
             : H0(Rhs.H0),
@@ -51,7 +54,7 @@ namespace Curves
         }
 
         // evaluate curve at t
-        T operator()(float t) const
+        constexpr T operator()(float t) const
         {
             const float tsq = t * t;
             const float tcb = tsq * t;
@@ -63,18 +66,18 @@ namespace Curves
             return this->operator()(t);
         }
 
-        T Tangent(float t) const
+        constexpr T Tangent(float t) const
         {
             return 0.5f * (3.0f * H3 * (t * t) + 2.0f * H2 * t + H1);
         }
 
-        T Curvature(float t) const
+        constexpr T Curvature(float t) const
         {
             return 0.5f * (6.0f * H3 * t + 2.0f * H2);
         }
 
-        T Normal(float t) const requires (HasDotProduct<T>);
-        T Normal(float t) const requires (!HasDotProduct<T>);
+        constexpr T Normal(float t) const requires (HasDotProduct<T>);
+        constexpr T Normal(float t) const requires (!HasDotProduct<T>);
         
         /**
          * Adaptively samples the curve between t and t+dt to within error and returns *pairs* of points in the provided vector
@@ -139,14 +142,14 @@ namespace Curves
     using CatmullRomSegment2D = TCatmullRomSegment<Algebra::Vector2D>;
 
     template<typename T>
-    T TCatmullRomSegment<T>::Normal(float t) const requires (HasDotProduct<T>)
+    constexpr T TCatmullRomSegment<T>::Normal(float t) const requires (HasDotProduct<T>)
     {
         const T CurvatureAt = Curvature(t);
         T TangentAt = Tangent(t);
         return CurvatureAt - CurvatureAt.Dot(TangentAt) * TangentAt.Normalize();
     }
     template<typename T>
-    T TCatmullRomSegment<T>::Normal(float t) const requires (!HasDotProduct<T>)
+    constexpr T TCatmullRomSegment<T>::Normal(float t) const requires (!HasDotProduct<T>)
     {
         const T CurvatureAt = Curvature(t);
         const T TangentAt = Tangent(t);

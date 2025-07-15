@@ -12,17 +12,19 @@ namespace Algebra
     public:
         Vector2D() = default;
         constexpr Vector2D(float InX, float InY) : X(InX), Y(InY) {}
+        constexpr Vector2D(const Vector2D& Rhs) = default;
+        constexpr Vector2D& operator=(const Vector2D& Rhs) = default;
         
-        float GetX() const { return X; }
-        float GetY() const { return Y; }
-        void SetX(float InX) { X = InX; }
-        void SetY(float InY) { Y = InY; }
-        void Set(float InX, float InY) 
+        constexpr float GetX() const { return X; }
+        constexpr float GetY() const { return Y; }
+        constexpr void SetX(float InX) { X = InX; }
+        constexpr void SetY(float InY) { Y = InY; }
+        constexpr void Set(float InX, float InY) 
         { 
             X = InX; 
             Y = InY; 
         }
-        Vector2D& Normalize()
+        constexpr Vector2D& Normalize()
         {
             float Length = this->LengthSq();
             if (Length > 0.0f)
@@ -55,12 +57,12 @@ namespace Algebra
             return *this;
         }
 
-        Vector2D operator-() const
+        constexpr Vector2D operator-() const
         {
             return {-X, -Y};
         }
 
-        Vector2D operator*(float InScalar) const
+        constexpr Vector2D operator*(float InScalar) const
         {
             return {X * InScalar, Y * InScalar};
         }
@@ -70,12 +72,12 @@ namespace Algebra
             return X == Rhs.X && Y == Rhs.Y;
         }
 
-        friend Vector2D operator*(float InScalar, const Vector2D& InPoint)
+        friend constexpr Vector2D operator*(float InScalar, const Vector2D& InPoint)
         {
             return {InPoint.X * InScalar, InPoint.Y * InScalar};
         }
 
-        friend Vector2D operator+(const Vector2D& Lhs, const Vector2D& Rhs)
+        friend constexpr Vector2D operator+(const Vector2D& Lhs, const Vector2D& Rhs)
         {
             return {Lhs.X + Rhs.X, Lhs.Y + Rhs.Y};
         }
@@ -85,17 +87,17 @@ namespace Algebra
             return {Lhs.X - Rhs.X, Lhs.Y - Rhs.Y};
         }
 
-        float Dot(const Vector2D& Rhs) const
+        constexpr float Dot(const Vector2D& Rhs) const
         {
             return X * Rhs.X + Y * Rhs.Y;
         }
 
-        Vector2D Cross(const Vector2D& Rhs) const
+        constexpr Vector2D Cross(const Vector2D& Rhs) const
         {
             return {X * Rhs.Y - Y * Rhs.X, Y * Rhs.X - X * Rhs.Y};
         }
         
-        float LengthSq() const
+        constexpr float LengthSq() const
         {
             return this->Dot(*this);
         }
@@ -122,12 +124,12 @@ namespace Algebra
             Elements[0][0] = m00; Elements[0][1] = m01;
             Elements[1][0] = m10; Elements[1][1] = m11;
         }
-        Matrix2D(const Vector2D& v0, const Vector2D& v1)
+        constexpr Matrix2D(const Vector2D& v0, const Vector2D& v1)
         {
             Elements[0][0] = v0.GetX(); Elements[0][1] = v0.GetY();
             Elements[1][0] = v1.GetX(); Elements[1][1] = v1.GetY();
         }
-        Matrix2D(const Matrix2D& Rhs)
+        constexpr Matrix2D(const Matrix2D& Rhs)
         {
             Elements[0][0] = Rhs.Elements[0][0];
             Elements[0][1] = Rhs.Elements[0][1];
@@ -146,16 +148,16 @@ namespace Algebra
                 MathLib::NearlyEqual(Lhs.Elements[1][1], Rhs.Elements[1][1]);
         }
         
-        float& operator()(int row, int col) 
+        constexpr float& operator()(int row, int col) 
         { 
             return Elements[row][col]; 
         }
-        float operator()(int row, int col) const 
+        constexpr float operator()(int row, int col) const 
         { 
             return Elements[row][col]; 
         }
 
-        float Determinant() const
+        constexpr float Determinant() const
         {
             return Elements[0][0] * Elements[1][1] - Elements[0][1] * Elements[1][0];
         }
@@ -175,7 +177,7 @@ namespace Algebra
             );
         }
         
-        Matrix2D operator*(const Matrix2D& rhs) const
+        constexpr Matrix2D operator*(const Matrix2D& rhs) const
         {
             return {
                 Elements[0][0] * rhs.Elements[0][0] + Elements[0][1] * rhs.Elements[1][0],
@@ -185,7 +187,7 @@ namespace Algebra
             };
         }
 
-        Vector2D operator*(const Vector2D& vec) const
+        constexpr Vector2D operator*(const Vector2D& vec) const
         {
             return {
                 Elements[0][0] * vec.GetX() + Elements[0][1] * vec.GetY(),
@@ -193,7 +195,7 @@ namespace Algebra
             };
         }
 
-        Matrix2D operator*(float scalar) const
+        constexpr Matrix2D operator*(float scalar) const
         {
             return {
                 Elements[0][0] * scalar, Elements[0][1] * scalar,
@@ -201,7 +203,7 @@ namespace Algebra
             };
         }
 
-        Matrix2D operator+(const Matrix2D& rhs) const
+        constexpr Matrix2D operator+(const Matrix2D& rhs) const
         {
             return {
                 Elements[0][0] + rhs.Elements[0][0], Elements[0][1] + rhs.Elements[0][1],
@@ -209,7 +211,7 @@ namespace Algebra
             };
         }
 
-        Matrix2D operator-(const Matrix2D& rhs) const
+        constexpr Matrix2D operator-(const Matrix2D& rhs) const
         {
             return {
                 Elements[0][0] - rhs.Elements[0][0], Elements[0][1] - rhs.Elements[0][1],
@@ -217,7 +219,7 @@ namespace Algebra
             };
         }
 
-        static Matrix2D Identity()
+        constexpr static Matrix2D Identity()
         {
             return {};
         }
@@ -229,12 +231,12 @@ namespace Algebra
             return {c, -s, s, c};
         }
 
-        static Matrix2D Scale(float Sx, float Sy)
+        constexpr static Matrix2D Scale(float Sx, float Sy)
         {
             return {Sx, 0.0f, 0.0f, Sy};
         }
         
-        friend Matrix2D operator*(float scalar, const Matrix2D& mat)
+        constexpr friend Matrix2D operator*(float scalar, const Matrix2D& mat)
         {
             return mat * scalar;
         }

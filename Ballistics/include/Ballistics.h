@@ -46,13 +46,13 @@ namespace Ballistics
 		float	AirDensity;
 		float	AirPressure;
 
-		void UpdateAirDensityFromTandP()
+		constexpr void UpdateAirDensityFromTandP()
 		{
 			AirDensity = AirPressure / (287.05f * TKelvin);
 		}
 	};
 
-	inline float KelvinToCelcius(float TK)
+	constexpr float KelvinToCelcius(float TK)
 	{
 		return TK - 272.15f;
 	}
@@ -95,13 +95,13 @@ namespace Ballistics
 		Algebra::Vector2D Position;
 		float T;
 
-		TrajectoryDataPoint() = default;
+		constexpr TrajectoryDataPoint() = default;
 		explicit TrajectoryDataPoint(FiringData InFiringData)
 		{
 			Initialize(InFiringData);
 		}
 
-		TrajectoryDataPoint& Initialize(FiringData InFiringData)
+		constexpr TrajectoryDataPoint& Initialize(FiringData InFiringData)
 		{
 			T = 0.0f;
 			Position.SetX(0.0f);
