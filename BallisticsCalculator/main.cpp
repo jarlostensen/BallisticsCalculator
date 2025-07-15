@@ -80,8 +80,8 @@ namespace
         DrawText(std::format("Temperature {:.1f} Celsius", Ballistics::KelvinToCelcius(Environment.TKelvin)), {200.0f, 40.0f});
         DrawText("G7", {450.0f, 25.0f});
         DrawText("G1", {450.0f, 40.0f});
-        DrawLine({{500.0f, 25.0f}, {550.0f, 25.0f}}, Red);
-        DrawLine({{500.0f, 40.0f}, {550.0f, 40.0f}}, Magenta);
+        DrawLine({{500.0f, 30.0f}, {550.0f, 30.0f}}, Red);
+        DrawLine({{500.0f, 45.0f}, {550.0f, 45.0f}}, Magenta);
         
         if ( bCurveSelected )
         {
