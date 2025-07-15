@@ -45,6 +45,7 @@ namespace Ballistics
 	struct FiringData
 	{
 		BulletData Bullet;
+		float	MuzzleVelocityMs = 0.0f;
 		float	ZeroDistance = 0.0f;
 		float	ZeroAngle = 0.0f;
 		float	Height = 0.0f;
@@ -84,8 +85,8 @@ namespace Ballistics
 			T = 0.0f;
 			Position.SetX(0.0f);
 			Position.SetY(InFiringData.Height);
-			Velocity.SetX(InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle));
-			Velocity.SetY(InFiringData.Bullet.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle));
+			Velocity.SetX(InFiringData.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle));
+			Velocity.SetY(InFiringData.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle));
 
 			return *this;
 		}

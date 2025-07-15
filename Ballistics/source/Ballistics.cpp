@@ -47,9 +47,9 @@ namespace Ballistics
         HybridEulerRk4Solver(const DragTableType& InDragTable, const FiringData& InFiringData, const EnvironmentData& InEnvironment, const SolverParams& SolverParams)
             : SolverBase(InDragTable, InFiringData, InEnvironment, SolverParams)
         {
-            LastQ = { InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle), InFiringData.Bullet.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle) };
+            LastQ = { InFiringData.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle), InFiringData.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle) };
             
-            VelocitySolver.Initialize(InFiringData.Bullet.MuzzleVelocityMs, SolverParams.TimeStep, [this](float V, float /* t */) -> float
+            VelocitySolver.Initialize(InFiringData.MuzzleVelocityMs, SolverParams.TimeStep, [this](float V, float /* t */) -> float
                 {
                     return -DragFactor * GetDragCoefficient(DragTable,V, this->Environment.TKelvin) * (V * V);
                 });
@@ -70,8 +70,8 @@ namespace Ballistics
         {
             SolverBase::Reset(InFiringData);
             VelocitySolver.Reset();
-            LastQ.SetX(InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle));
-            LastQ.SetY(InFiringData.Bullet.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle));
+            LastQ.SetX(InFiringData.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle));
+            LastQ.SetY(InFiringData.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle));
         }
 
         Solver::RungeKutta4 VelocitySolver;

@@ -13,7 +13,6 @@ namespace Ballistics
     struct BulletData
     {
         float	MassGr = 0.0f;
-        float	MuzzleVelocityMs = 0.0f;
         float   G1BC = 0.0f;
         float	G7BC = 0.0f;
         float	CallibreMm = 0.0f;
