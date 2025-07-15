@@ -14,7 +14,8 @@ namespace
     Ballistics::BulletData BulletData;
     Ballistics::EnvironmentData Environment;
     Ballistics::FiringData FiringData;
-    std::vector<Ballistics::TrajectoryDataPoint> TrajectoryDataPoints;
+    std::vector<Ballistics::TrajectoryDataPoint> G1TrajectoryDataPoints;
+    std::vector<Ballistics::TrajectoryDataPoint> G7TrajectoryDataPoints;
     Curve2D::PointInfo SelectedCurvePointInfo;
     bool bCurveSelected = false;
     PlotPtr TrajectoryPlot;
@@ -25,25 +26,21 @@ namespace
         {
             TrajectoryPlot = Plot::Create();
             Curve2D Curve;
-            for (size_t nQ = 0; nQ < TrajectoryDataPoints.size(); ++nQ)
+            for (size_t nQ = 0; nQ < G1TrajectoryDataPoints.size(); ++nQ)
             {
-                Curve.AddPoint(TrajectoryDataPoints[nQ].Position.GetX(), TrajectoryDataPoints[nQ].Position.GetY(), nQ);
+                Curve.AddPoint(G1TrajectoryDataPoints[nQ].Position.GetX(), G1TrajectoryDataPoints[nQ].Position.GetY(), nQ);
             }
             Curve.SetColor(Magenta);
             TrajectoryPlot->AddCurve(std::move(Curve), 1);
-            Range2D PlotRange = TrajectoryPlot->GetExtents();
-
-            const float Scale = 2.0f*static_cast<float>(std::numbers::pi) / TrajectoryDataPoints.size();
-            const float HalfWidth = 0.5f * PlotRange.Width();
-            const float HalfHeight = 0.5f * PlotRange.Height();
-            for (size_t nQ = 0; nQ < (TrajectoryDataPoints.size()/2); ++nQ)
+            
+            for (size_t nQ = 0; nQ < G7TrajectoryDataPoints.size(); ++nQ)
             {
-                Curve.AddPoint(HalfWidth * (1.0f + cosf(Scale * nQ)), PlotRange.Min.GetY() + HalfHeight * (1.0f + sinf(Scale * nQ)), std::numeric_limits<size_t>::max() );
+                Curve.AddPoint(G7TrajectoryDataPoints[nQ].Position.GetX(), G7TrajectoryDataPoints[nQ].Position.GetY(), nQ);
             }
             Curve.SetColor(Red);
             TrajectoryPlot->AddCurve(std::move(Curve), 2);
-            PlotRange = TrajectoryPlot->GetExtents();
-
+            Range2D PlotRange = TrajectoryPlot->GetExtents();
+            
             const float CurveHeight = PlotRange.Height();
             const float CenterLineYPos = PlotRange.Min.GetY() + CurveHeight/2.0f;
             const float HeightLineXPos = PlotRange.Min.GetX() + 1.0f;
@@ -86,18 +83,18 @@ namespace
         {
             Algebra::Vector2D Tangent = SelectedCurvePointInfo.Tangent;
             Algebra::Vector2D Normal = SelectedCurvePointInfo.Normal.Normalize();
-            const float KineticEnergy = 0.5f * FiringData.Bullet.GetMassKg() * TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Velocity.LengthSq();
+            const float KineticEnergy = 0.5f * FiringData.Bullet.GetMassKg() * G1TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Velocity.LengthSq();
             TrajectoryPlot->AddTransientLabel(std::format("x:{:.1f}m/s\ny:{:.1f}m/s\n{:.1f}J @ t:{:.001f}s",
-                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Velocity.GetX(),
-                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Velocity.GetY(),
+                G1TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Velocity.GetX(),
+                G1TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Velocity.GetY(),
                 KineticEnergy,
-                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].T),
-                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position + 0.05f*Normal,
+                G1TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].T),
+                G1TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position + 0.05f*Normal,
                 DarkGray);
-            TrajectoryPlot->AddTransientLine(TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position,
-                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position + Tangent, Blue);
-            TrajectoryPlot->AddTransientLine(TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position,
-                TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position + 0.05f*Normal, Blue);
+            TrajectoryPlot->AddTransientLine(G1TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position,
+                G1TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position + Tangent, Blue);
+            TrajectoryPlot->AddTransientLine(G1TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position,
+                G1TrajectoryDataPoints[SelectedCurvePointInfo.MetaDataTag].Position + 0.05f*Normal, Blue);
         }
 
         Range2D ViewportExtents = GetRenderer()->GetViewportExtents();
@@ -111,6 +108,7 @@ namespace
     void Solve()
     {
         BulletData.MassGr = 155.0f;
+        BulletData.G1BC = 0.29f;
         BulletData.G7BC = 0.275f;
         BulletData.MuzzleVelocityMs = 871.42f;
         BulletData.CallibreMm = Ballistics::Callibre308Mm;
@@ -126,14 +124,18 @@ namespace
         // roughly one inch at 100m etc
         const float ToleranceM = (2.0f * (FiringData.ZeroDistance * 0.01f)) / 100.0f;
 
-        FiringData.ZeroIn(Ballistics::G7, ToleranceM, Environment);
-
+        FiringData.ZeroIn(Ballistics::G1, ToleranceM, Environment);
         Ballistics::SolverParams Solver;
         Solver.MaxTime = 10.0f;
         Solver.TimeStep = 0.01f;
         Solver.MaxX = 300.0f;
-        
-        Ballistics::SolveTrajectory(Ballistics::G7, TrajectoryDataPoints, FiringData, Environment, Solver);
+        Ballistics::SolveTrajectory(Ballistics::G7, G1TrajectoryDataPoints, FiringData, Environment, Solver);
+
+        FiringData.ZeroIn(Ballistics::G7, ToleranceM, Environment);
+        Solver.MaxTime = 10.0f;
+        Solver.TimeStep = 0.01f;
+        Solver.MaxX = 300.0f;
+        Ballistics::SolveTrajectory(Ballistics::G7, G7TrajectoryDataPoints, FiringData, Environment, Solver);
     }
 
 }
