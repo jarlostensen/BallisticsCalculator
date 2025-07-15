@@ -11,9 +11,12 @@ namespace Algebra
         float Y = 0.0f;
     public:
         Vector2D() = default;
+        ~Vector2D() = default;
         constexpr Vector2D(float InX, float InY) : X(InX), Y(InY) {}
         constexpr Vector2D(const Vector2D& Rhs) = default;
         constexpr Vector2D& operator=(const Vector2D& Rhs) = default;
+        constexpr Vector2D(Vector2D&& Rhs) = default;
+        constexpr Vector2D& operator=(Vector2D&& Rhs) = default;
         
         constexpr float GetX() const { return X; }
         constexpr float GetY() const { return Y; }
@@ -24,7 +27,7 @@ namespace Algebra
             X = InX; 
             Y = InY; 
         }
-        constexpr Vector2D& Normalize()
+        Vector2D& Normalize()
         {
             float Length = this->LengthSq();
             if (Length > 0.0f)
@@ -36,21 +39,21 @@ namespace Algebra
             return *this;
         }
         
-        Vector2D& operator+=(const Vector2D& InPoint)
+        constexpr Vector2D& operator+=(const Vector2D& InPoint)
         {
             X += InPoint.X;
             Y += InPoint.Y;
             return *this;
         }
 
-        Vector2D& operator-=(const Vector2D& InPoint)
+        constexpr Vector2D& operator-=(const Vector2D& InPoint)
         {
             X -= InPoint.X;
             Y -= InPoint.Y;
             return *this;
         }
 
-        Vector2D& operator*=(float InScalar)
+        constexpr Vector2D& operator*=(float InScalar)
         {
             X *= InScalar;
             Y *= InScalar;
@@ -67,7 +70,7 @@ namespace Algebra
             return {X * InScalar, Y * InScalar};
         }
 
-        bool operator==(const Vector2D& Rhs) const
+        constexpr bool operator==(const Vector2D& Rhs) const
         {
             return X == Rhs.X && Y == Rhs.Y;
         }
@@ -119,6 +122,21 @@ namespace Algebra
     public:
         Matrix2D() = default;
         ~Matrix2D() = default;
+        Matrix2D(const Matrix2D& Rhs) = default;
+        Matrix2D(Matrix2D&& Rhs) = default;
+        constexpr Matrix2D& operator=(const Matrix2D& Rhs) = default;
+        constexpr Matrix2D& operator=(Matrix2D&& Rhs) = default;
+        /**
+         * @param InScalar
+         * create matrix with inScalar on the diagonal 
+         */
+        constexpr Matrix2D(float InScalar)
+        {
+            Elements[0][0] = InScalar;
+            Elements[0][1] = 0.0f;
+            Elements[1][0] = 0.0f;
+            Elements[1][1] = InScalar;
+        }
         constexpr Matrix2D(float m00, float m01, float m10, float m11)
         {
             Elements[0][0] = m00; Elements[0][1] = m01;
@@ -129,14 +147,7 @@ namespace Algebra
             Elements[0][0] = v0.GetX(); Elements[0][1] = v0.GetY();
             Elements[1][0] = v1.GetX(); Elements[1][1] = v1.GetY();
         }
-        constexpr Matrix2D(const Matrix2D& Rhs)
-        {
-            Elements[0][0] = Rhs.Elements[0][0];
-            Elements[0][1] = Rhs.Elements[0][1];
-            Elements[1][0] = Rhs.Elements[1][0];
-            Elements[1][1] = Rhs.Elements[1][1];
-        }
-
+        
         bool NearlyEqual(const Matrix2D& Lhs, const Matrix2D& Rhs) const
         {
             return MathLib::NearlyEqual(Lhs.Elements[0][0], Rhs.Elements[0][0])
