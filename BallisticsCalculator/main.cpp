@@ -126,14 +126,14 @@ namespace
         // roughly one inch at 100m etc
         const float ToleranceM = (2.0f * (FiringData.ZeroDistance * 0.01f)) / 100.0f;
 
-        FiringData.ZeroIn(ToleranceM, Environment);
+        FiringData.ZeroIn(Ballistics::G7, ToleranceM, Environment);
 
         Ballistics::SolverParams Solver;
         Solver.MaxTime = 10.0f;
         Solver.TimeStep = 0.01f;
         Solver.MaxX = 300.0f;
         
-        Ballistics::SolveTrajectoryG7(TrajectoryDataPoints, FiringData, Environment, Solver);
+        Ballistics::SolveTrajectory(Ballistics::G7, TrajectoryDataPoints, FiringData, Environment, Solver);
     }
 
 }

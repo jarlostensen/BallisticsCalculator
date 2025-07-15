@@ -1,37 +1,15 @@
 #pragma once
 #include <vector>
-#include <numbers>
 #include <Algebra.h>
+#include "BulletData.h"
+#include "Data.h"
 
 namespace Ballistics
 {
 	constexpr float Callibre308Mm = 7.62f;
 	constexpr float MsToFtS = 3.2804f;
 
-	/**
-	 * @brief Represents the data related to a bullet used in ballistic calculations.
-	 *
-	 * This structure encapsulates essential properties of a bullet, such as its mass,
-	 * muzzle velocity, ballistic coefficient, and caliber.
-	 */
-	struct BulletData
-	{
-		float	MassGr = 0.0f;
-		float	MuzzleVelocityMs = 0.0f;
-		float	G7BC = 0.0f;
-		float	CallibreMm = 0.0f;
-		
-		float GetMassKg() const
-		{
-			return MassGr * 0.00006479891f;
-		}
-
-		float GetCrossSectionalArea() const
-		{
-			return (float)std::numbers::pi * 0.25f * (CallibreMm * CallibreMm / 1000000.0f);
-		}
-	};
-
+	
 	/**
 	 * @brief Represents the environmental parameters affecting ballistic calculations.
 	 *
@@ -71,7 +49,7 @@ namespace Ballistics
 		float	ZeroAngle = 0.0f;
 		float	Height = 0.0f;
 
-		void ZeroIn(float ToleranceMm, const EnvironmentData& Environment);
+		void ZeroIn(const DragTableType& InDragTable, float ToleranceMm, const EnvironmentData& Environment);
 	};
 
 	struct SolverParams
@@ -120,5 +98,5 @@ namespace Ballistics
 	 * @param Environment 
 	 * @param Solver 
 	 */
-	void SolveTrajectoryG7(std::vector<TrajectoryDataPoint>& OutTrajectoryDataPoints, const FiringData & InFiringData, const EnvironmentData & Environment, const SolverParams & Solver);
+	void SolveTrajectory(const DragTableType& InDragTable, std::vector<TrajectoryDataPoint>& OutTrajectoryDataPoints, const FiringData & InFiringData, const EnvironmentData & Environment, const SolverParams & Solver);
 }

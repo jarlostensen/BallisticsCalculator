@@ -163,10 +163,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\Ballistics.cpp" />
+    <ClCompile Include="source\BulletData.cpp" />
     <ClCompile Include="source\Data.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Ballistics.h" />
+    <ClInclude Include="include\BulletData.h" />
     <ClInclude Include="include\Data.h" />
     <ClInclude Include="include\Solver.h" />
   </ItemGroup>

@@ -4,6 +4,7 @@
 namespace Ballistics
 {
     using DragTableType = std::map<float, float>;
+    extern const DragTableType G1;
     extern const DragTableType G7;
 
     float GetDragCoefficient(const DragTableType& Table, float Speed, float TemperatureK);

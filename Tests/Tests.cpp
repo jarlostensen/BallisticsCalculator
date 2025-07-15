@@ -2,10 +2,34 @@
 #include <Curves.h>
 #include <Algebra.h>
 #include <Ballistics.h>
+#include <BulletData.h>
+#include <Data.h>
 #include <cassert>
 
 namespace
 {
+    void TestBulletData()
+    {
+        Ballistics::BulletData BulletData;
+
+        const std::string JsonData = R"({
+            "bc_fn": "",
+            "bc_g1": "0.29",
+            "bc_g7": "",
+            "company": "Hornady",
+            "description": "Hornady .308 110gr V-MAX 23010",
+            "diameter_in": "0.308",
+            "name": "30 Cal .308 110 gr V-MAX®",
+            "product_name": "V-MAX®",
+            "sectional_density": "0.166",
+            "sku": "23010",
+            "type": "rifle",
+            "weight_gr": "110"
+        })";
+
+        BulletData.ParseFromJsonString(JsonData);
+    }
+    
     void TestCatmullRom()
     {
         constexpr Curves::CatmullRomSegment1D Segment(-1.0f, 0.0f, 1.0f, 2.0f);
@@ -77,9 +101,9 @@ namespace
 
         // roughly one inch at 100m etc
         const float ToleranceM = (2.0f * (FiringData.ZeroDistance * 0.01f)) / 100.0f;
-
-        FiringData.ZeroIn(ToleranceM, Environment);
-
+        FiringData.ZeroIn(Ballistics::G7, ToleranceM, Environment);
+        assert(FiringData.ZeroAngle > 0.0f);
+        FiringData.ZeroIn(Ballistics::G1, ToleranceM, Environment);
         assert(FiringData.ZeroAngle > 0.0f);
     }
 
@@ -109,6 +133,7 @@ namespace
 
 int main(int argc, char* argv[])
 {
+    TestBulletData();
     TestCatmullRom();
     TestZero();
     TestAlgebra();

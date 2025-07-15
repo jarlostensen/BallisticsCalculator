@@ -17,12 +17,14 @@ namespace Ballistics
         float DragFactor;
         EnvironmentData Environment;
         SolverParams Params;
+        const DragTableType& DragTable;
 
-        SolverBase(const FiringData& InFiringData, const EnvironmentData& Environment, const SolverParams& SolverParams)
+        SolverBase(const DragTableType& InDragTable, const FiringData& InFiringData, const EnvironmentData& Environment, const SolverParams& SolverParams)
             : Q(InFiringData),
             DragFactor(0.5f * Environment.AirDensity * InFiringData.Bullet.GetCrossSectionalArea() / InFiringData.Bullet.GetMassKg()),
             Environment(Environment),
-            Params(SolverParams)
+            Params(SolverParams),
+            DragTable(InDragTable)
         {
         }
         virtual bool Completed() const
@@ -40,32 +42,16 @@ namespace Ballistics
         virtual void Advance() = 0;
     };
 
-    struct EulerSolver : SolverBase
-    {
-        EulerSolver(const FiringData& InFiringData, const EnvironmentData& InEnvironment, const SolverParams& SolverParams)
-            : SolverBase(InFiringData, InEnvironment, SolverParams)
-        {
-        }
-
-        virtual void Advance() override
-        {
-            const float DragAcceleration = -DragFactor * GetDragCoefficient(G7, Q.Velocity.GetX(), Environment.TKelvin) * (Q.Velocity.GetX() * Q.Velocity.GetX());
-            Q.Velocity += {DragAcceleration*Params.TimeStep, Environment.Gravity*Params.TimeStep};
-            Q.Position += Params.TimeStep * Q.Velocity;
-            Q.T += Params.TimeStep;
-        }
-    };
-
     struct HybridEulerRk4Solver : SolverBase
     {
-        HybridEulerRk4Solver(const FiringData& InFiringData, const EnvironmentData& InEnvironment, const SolverParams& SolverParams)
-            : SolverBase(InFiringData, InEnvironment, SolverParams)
+        HybridEulerRk4Solver(const DragTableType& InDragTable, const FiringData& InFiringData, const EnvironmentData& InEnvironment, const SolverParams& SolverParams)
+            : SolverBase(InDragTable, InFiringData, InEnvironment, SolverParams)
         {
             LastQ = { InFiringData.Bullet.MuzzleVelocityMs * cosf(InFiringData.ZeroAngle), InFiringData.Bullet.MuzzleVelocityMs * sinf(InFiringData.ZeroAngle) };
             
             VelocitySolver.Initialize(InFiringData.Bullet.MuzzleVelocityMs, SolverParams.TimeStep, [this](float V, float /* t */) -> float
                 {
-                    return -DragFactor * GetDragCoefficient(G7,V, this->Environment.TKelvin) * (V * V);
+                    return -DragFactor * GetDragCoefficient(DragTable,V, this->Environment.TKelvin) * (V * V);
                 });
         }
 
@@ -92,9 +78,9 @@ namespace Ballistics
         Algebra::Vector2D LastQ;
     };
     
-	void SolveTrajectoryG7(std::vector<TrajectoryDataPoint>& OutElevation, const FiringData& InFiringData, const EnvironmentData& Environment, const SolverParams& InSolverParams)
+	void SolveTrajectory(const DragTableType& InDragTable, std::vector<TrajectoryDataPoint>& OutElevation, const FiringData& InFiringData, const EnvironmentData& Environment, const SolverParams& InSolverParams)
 	{
-        HybridEulerRk4Solver Solver(InFiringData, Environment, InSolverParams);
+        HybridEulerRk4Solver Solver(InDragTable, InFiringData, Environment, InSolverParams);
 
         while (!Solver.Completed() && (InSolverParams.MaxX==0.0f || Solver.Q.Position.GetX()<InSolverParams.MaxX))
         {            
@@ -103,7 +89,7 @@ namespace Ballistics
         }
 	}
 
-    void FiringData::ZeroIn(float ToleranceM, const EnvironmentData& Environment)
+    void FiringData::ZeroIn(const DragTableType& InDragTable, float ToleranceM, const EnvironmentData& Environment)
     {
         if (ZeroDistance <= 0.0f)
         {
@@ -120,7 +106,7 @@ namespace Ballistics
         float MaxAngle = static_cast<float>(std::numbers::pi) / 2.0f;
 	    ZeroAngle = MinAngle + (MaxAngle - MinAngle) / 2.0f;
 	    
-	    HybridEulerRk4Solver Solver(*this, Environment, SolverParams);
+	    HybridEulerRk4Solver Solver(InDragTable, *this, Environment, SolverParams);
         for (;;)
         {
             ZeroAngle = MinAngle + (MaxAngle - MinAngle) / 2.0f;
