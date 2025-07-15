@@ -78,6 +78,10 @@ namespace
         DrawText(std::format("Zero distance is {:.1f}m", FiringData.ZeroDistance), {10.f, 40.f});
         DrawText(std::format("Calibre {:.2f}mm, bullet weight {} grains", FiringData.Bullet.CallibreMm, static_cast<int>(FiringData.Bullet.MassGr)), { 200.0f, 25.0f });
         DrawText(std::format("Temperature {:.1f} Celsius", Ballistics::KelvinToCelcius(Environment.TKelvin)), {200.0f, 40.0f});
+        DrawText("G7", {450.0f, 25.0f});
+        DrawText("G1", {450.0f, 40.0f});
+        DrawLine({{500.0f, 25.0f}, {550.0f, 25.0f}}, Red);
+        DrawLine({{500.0f, 40.0f}, {550.0f, 40.0f}}, Magenta);
         
         if ( bCurveSelected )
         {
@@ -129,7 +133,7 @@ namespace
         Solver.MaxTime = 10.0f;
         Solver.TimeStep = 0.01f;
         Solver.MaxX = 300.0f;
-        Ballistics::SolveTrajectory(Ballistics::G7, G1TrajectoryDataPoints, FiringData, Environment, Solver);
+        Ballistics::SolveTrajectory(Ballistics::G1, G1TrajectoryDataPoints, FiringData, Environment, Solver);
 
         FiringData.ZeroIn(Ballistics::G7, ToleranceM, Environment);
         Solver.MaxTime = 10.0f;
