@@ -4,9 +4,11 @@
 #include <vector>
 
 #include <sstream>
+#ifdef WITH_SDL
 //#include <SDL3/SDL_main.h>
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#endif
 
 using namespace Plotter;
 namespace Application
@@ -30,6 +32,7 @@ namespace Application
         OnMouseButtonDelegate = std::move(InOnMouseButtonDelegate);
     }
 
+#ifdef WITH_SDL
     SDL_Window* SdlWindow = NULL;
     SDL_Renderer* SdlRenderer = NULL;
     TTF_Font* SdlFont = nullptr;
@@ -185,4 +188,14 @@ namespace Application
             }
         }
     }
+#else
+    bool Init()
+    {
+        return true;
+    }
+    void Run()
+    {
+
+    }
+#endif
 }
