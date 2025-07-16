@@ -60,6 +60,11 @@ namespace Algebra
             return *this;
         }
 
+        constexpr Vector2D ProjectedNormalRH() const
+        {
+            return { GetY(), -GetX() };
+        }
+
         constexpr Vector2D operator-() const
         {
             return {-X, -Y};

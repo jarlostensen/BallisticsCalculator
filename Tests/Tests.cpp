@@ -114,7 +114,10 @@ namespace
 
         constexpr Algebra::Vector2D UnitVector(1.0f, 0.0f);
         static_assert(UnitVector.LengthSq()==1.0f);
-        
+
+        constexpr Algebra::Vector2D ProjectedNormal = UnitVector.ProjectedNormalRH();
+        static_assert(ProjectedNormal.Dot(UnitVector) == 0.0f);
+
         Algebra::Matrix2D M1 = Algebra::Matrix2D::Rotation(static_cast<float>(std::numbers::pi) / 4.0f);
         std::optional<Algebra::Matrix2D> M1Inv = M1.Inverse();
         assert(M1Inv.has_value());
@@ -128,6 +131,11 @@ namespace
         const Algebra::Vector2D RotatedUnitVectorY = M1 * UnitVectorY;
         assert(MathLib::NearlyEqual(RotatedUnitVectorY.LengthSq(), 1.0f));
         assert(MathLib::NearlyEqual(RotatedUnitVectorY.GetX(), RotatedUnitVectorY.GetY()));
+
+        const Algebra::Vector2D ProjectedNormalX = RotatedUnitVectorX.ProjectedNormalRH();
+        const Algebra::Vector2D ProjectedNormalY = RotatedUnitVectorY.ProjectedNormalRH();
+        assert(ProjectedNormalX.Dot(RotatedUnitVectorX) == 0.0f);
+        assert(ProjectedNormalY.Dot(RotatedUnitVectorY) == 0.0f);
     }
 }
 

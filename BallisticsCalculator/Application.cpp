@@ -13,6 +13,7 @@ namespace Application
 {
     OnMouseMoveDelegateType OnMouseMoveDelegate;
     OnAppUpdateDelegateType OnAppUpdateDelegate;
+    OnMouseButtonDelegateType OnMouseButtonDelegate;
 
     void SetMouseMoveDelegate(OnMouseMoveDelegateType&& InOnMouseMoveDelegate)
     {
@@ -23,7 +24,12 @@ namespace Application
     {
         OnAppUpdateDelegate = std::move(InOnAppUpdateDelegate);
     }
-    
+
+    void SetMouseButtonDelegate(OnMouseButtonDelegateType&& InOnMouseButtonDelegate)
+    {
+        OnMouseButtonDelegate = std::move(InOnMouseButtonDelegate);
+    }
+
     SDL_Window* SdlWindow = NULL;
     SDL_Renderer* SdlRenderer = NULL;
     TTF_Font* SdlFont = nullptr;
@@ -121,35 +127,6 @@ namespace Application
         return true;
     }
 
-    // SDL_AppResult SdlAppEvent(void* /*appstate*/, SDL_Event* event)
-    // {
-    //     if (event->type == SDL_EVENT_KEY_DOWN ||
-    //     event->type == SDL_EVENT_QUIT) {
-    //         return SDL_APP_SUCCESS;
-    //     }
-    //     switch (event->type)
-    //     {
-    //     case  SDL_EVENT_WINDOW_RESIZED:
-    //         {
-    //             int ViewportWidth;
-    //             int ViewportHeight;
-    //             SDL_GetRenderOutputSize(SdlRenderer, &ViewportWidth, &ViewportHeight);
-    //             ViewportExtents.Max.SetX( static_cast<float>(ViewportWidth) );
-    //             ViewportExtents.Max.SetY( static_cast<float>(ViewportHeight) );
-    //         }
-    //         break;
-    //     case SDL_EVENT_MOUSE_BUTTON_DOWN:
-    //     case SDL_EVENT_MOUSE_BUTTON_UP:
-    //     case SDL_EVENT_MOUSE_MOTION:
-    //         {
-    //             OnMouseMoveDelegate({event->motion.x,event->motion.y});
-    //         }
-    //         break;
-    //     default:;
-    //     }
-    //     return SDL_APP_CONTINUE;
-    // }
-
     void Run()
     {
         bool bRunning = true;
@@ -174,9 +151,19 @@ namespace Application
                     break;
                 case SDL_EVENT_MOUSE_BUTTON_DOWN:
                 case SDL_EVENT_MOUSE_BUTTON_UP:
+                    {
+                        if (OnMouseButtonDelegate)
+                        {
+                            OnMouseButtonDelegate(Event.type == SDL_EVENT_MOUSE_BUTTON_DOWN, {Event.button.x,Event.button.y});
+                        }
+                    }
+                    break;
                 case SDL_EVENT_MOUSE_MOTION:
                     {
-                        OnMouseMoveDelegate({Event.motion.x,Event.motion.y});
+                        if ( OnMouseMoveDelegate )
+                        {
+                            OnMouseMoveDelegate({Event.motion.x,Event.motion.y});
+                        }
                     }
                     break;
                 default:;
